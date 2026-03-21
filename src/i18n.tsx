@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export const supportedLocales = ["ru", "en"] as const;
 
@@ -37,9 +37,21 @@ type Messages = {
   save: string;
   noDate: string;
   generation: (value: number) => string;
+  relatedParentsHighRiskTitle: string;
+  relatedParentsMediumRiskTitle: string;
+  relatedParentsRiskDescription: (value: string) => string;
+  relationDirectParentChild: string;
+  relationDirectGrandparent: string;
+  relationDirectAncestor: string;
+  relationFullSiblings: string;
+  relationHalfSiblings: string;
+  relationAuntUncle: string;
+  relationFirstCousins: string;
   errorOwnFather: string;
   errorOwnMother: string;
   errorParentsMatch: string;
+  errorFatherDescendant: string;
+  errorMotherDescendant: string;
   errorNameRequired: string;
   errorNameTooLong: string;
 };
@@ -112,9 +124,21 @@ const messagesByLocale: Record<Locale, Messages> = {
     save: "Сохранить",
     noDate: "Без даты",
     generation: (value) => `Поколение ${value}`,
+    relatedParentsHighRiskTitle: "Высокий риск",
+    relatedParentsMediumRiskTitle: "Средний риск",
+    relatedParentsRiskDescription: (value) => `${value}.`,
+    relationDirectParentChild: "родитель и потомок",
+    relationDirectGrandparent: "дед/бабка и внук/внучка",
+    relationDirectAncestor: "прямые предки одной линии",
+    relationFullSiblings: "полные брат и сестра",
+    relationHalfSiblings: "неполнородные брат и сестра",
+    relationAuntUncle: "дядя/тётя и племянник/племянница",
+    relationFirstCousins: "двоюродные родственники",
     errorOwnFather: "Животное не может быть своим собственным отцом.",
     errorOwnMother: "Животное не может быть своей собственной матерью.",
     errorParentsMatch: "Отец и мать должны быть разными животными.",
+    errorFatherDescendant: "Нельзя выбрать в отцы собственного потомка.",
+    errorMotherDescendant: "Нельзя выбрать в матери собственного потомка.",
     errorNameRequired: "Укажите имя животного.",
     errorNameTooLong: "Имя не должно быть длиннее 20 символов."
   },
@@ -157,9 +181,21 @@ const messagesByLocale: Record<Locale, Messages> = {
     save: "Save",
     noDate: "No date",
     generation: (value) => `Generation ${value}`,
+    relatedParentsHighRiskTitle: "High risk",
+    relatedParentsMediumRiskTitle: "Medium risk",
+    relatedParentsRiskDescription: (value) => `${value}.`,
+    relationDirectParentChild: "parent and offspring",
+    relationDirectGrandparent: "grandparent and grandchild",
+    relationDirectAncestor: "direct ancestors from the same line",
+    relationFullSiblings: "full siblings",
+    relationHalfSiblings: "half-siblings",
+    relationAuntUncle: "aunt or uncle with niece or nephew",
+    relationFirstCousins: "first cousins",
     errorOwnFather: "An animal cannot be its own father.",
     errorOwnMother: "An animal cannot be its own mother.",
     errorParentsMatch: "Father and mother must be different animals.",
+    errorFatherDescendant: "A descendant cannot be selected as the father.",
+    errorMotherDescendant: "A descendant cannot be selected as the mother.",
     errorNameRequired: "Please enter an animal name.",
     errorNameTooLong: "Name must be 20 characters or fewer."
   }
@@ -188,18 +224,22 @@ function resolveInitialLocale(): Locale {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => resolveInitialLocale());
 
+  const setLocale = useCallback((value: Locale) => {
+    window.localStorage.setItem(STORAGE_KEY, value);
+    setLocaleState(value);
+  }, []);
+
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, locale);
     document.documentElement.lang = locale;
     document.title = messagesByLocale[locale].documentTitle;
-  }, [locale]);
+  }, [locale, setLocale]);
 
   const value = useMemo<I18nContextValue>(() => {
     const messages = messagesByLocale[locale];
 
     return {
       locale,
-      setLocale: setLocaleState,
+      setLocale,
       messages,
       formatDate: (value: string) => {
         if (!value) {

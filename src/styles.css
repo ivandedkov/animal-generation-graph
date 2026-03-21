@@ -332,6 +332,29 @@ button {
   font-size: 14px;
 }
 
+.form-warning {
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.form-warning-high {
+  background: rgba(201, 86, 22, 0.12);
+  border: 1px solid rgba(201, 86, 22, 0.22);
+  color: #8b3412;
+}
+
+.form-warning-medium {
+  background: rgba(201, 133, 22, 0.12);
+  border: 1px solid rgba(201, 133, 22, 0.2);
+  color: #7f4d02;
+}
+
+.form-warning strong {
+  font-weight: 700;
+}
+
 .field-hint {
   margin-top: -6px;
   color: rgba(24, 49, 83, 0.62);

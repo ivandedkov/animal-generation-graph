@@ -34,6 +34,17 @@ type HoveredTarget = {
   area: "node" | "gear" | null;
 };
 
+type CloseRelationType =
+  | "direct_parent_child"
+  | "direct_grandparent"
+  | "direct_ancestor"
+  | "full_siblings"
+  | "half_siblings"
+  | "aunt_uncle"
+  | "first_cousins";
+
+type RelationRiskLevel = "high" | "medium";
+
 const NODE_WIDTH = 172;
 const NODE_HEIGHT = 90;
 const GENERATION_GAP = 260;
@@ -71,17 +82,12 @@ function computeGenerations(animals: Animal[]) {
   const byId = new Map(animals.map((animal) => [animal.id, animal]));
   const memo = new Map<string, number>();
 
-  const visit = (animalId: string, stack: Set<string>): number => {
+  const visit = (animalId: string): number => {
     const cached = memo.get(animalId);
     if (cached !== undefined) {
       return cached;
     }
 
-    if (stack.has(animalId)) {
-      return 0;
-    }
-
-    stack.add(animalId);
     const animal = byId.get(animalId);
     if (!animal) {
       return 0;
@@ -89,15 +95,14 @@ function computeGenerations(animals: Animal[]) {
 
     const parentGenerations = [animal.fatherId, animal.motherId]
       .filter((parentId): parentId is string => Boolean(parentId))
-      .map((parentId) => visit(parentId, stack));
+      .map((parentId) => visit(parentId));
 
     const generation = parentGenerations.length === 0 ? 0 : Math.max(...parentGenerations) + 1;
     memo.set(animalId, generation);
-    stack.delete(animalId);
     return generation;
   };
 
-  return new Map(animals.map((animal) => [animal.id, visit(animal.id, new Set())]));
+  return new Map(animals.map((animal) => [animal.id, visit(animal.id)]));
 }
 
 function sortAnimalsForLayout(animals: Animal[], generationById: Map<string, number>, sourceOrder: Map<string, number>) {
@@ -171,6 +176,156 @@ function computeComponents(animals: Animal[]) {
   });
 
   return components;
+}
+
+function collectDescendantIds(animals: Animal[], rootAnimalId: string) {
+  const childrenByParentId = new Map<string, string[]>();
+
+  animals.forEach((animal) => {
+    [animal.fatherId, animal.motherId]
+      .filter((parentId): parentId is string => Boolean(parentId))
+      .forEach((parentId) => {
+        const children = childrenByParentId.get(parentId) ?? [];
+        children.push(animal.id);
+        childrenByParentId.set(parentId, children);
+      });
+  });
+
+  const seen = new Set<string>([rootAnimalId]);
+  const descendants = new Set<string>();
+  const stack = [rootAnimalId];
+
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (!currentId) {
+      continue;
+    }
+
+    (childrenByParentId.get(currentId) ?? []).forEach((childId) => {
+      if (seen.has(childId)) {
+        return;
+      }
+
+      seen.add(childId);
+      descendants.add(childId);
+      stack.push(childId);
+    });
+  }
+
+  return descendants;
+}
+
+function getParentIds(animal: Animal | undefined) {
+  if (!animal) {
+    return [];
+  }
+
+  return [animal.fatherId, animal.motherId].filter((parentId): parentId is string => Boolean(parentId));
+}
+
+function collectAncestorDepths(byId: Map<string, Animal>, animalId: string) {
+  const depths = new Map<string, number>();
+  const stack = getParentIds(byId.get(animalId)).map((parentId) => ({ id: parentId, depth: 1 }));
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    const knownDepth = depths.get(current.id);
+    if (knownDepth !== undefined && knownDepth <= current.depth) {
+      continue;
+    }
+
+    depths.set(current.id, current.depth);
+    getParentIds(byId.get(current.id)).forEach((parentId) => {
+      stack.push({ id: parentId, depth: current.depth + 1 });
+    });
+  }
+
+  return depths;
+}
+
+function getSiblingRelation(byId: Map<string, Animal>, leftId: string, rightId: string) {
+  if (leftId === rightId) {
+    return null;
+  }
+
+  const left = byId.get(leftId);
+  const right = byId.get(rightId);
+  if (!left || !right) {
+    return null;
+  }
+
+  const sameFather = Boolean(left.fatherId && left.fatherId === right.fatherId);
+  const sameMother = Boolean(left.motherId && left.motherId === right.motherId);
+
+  if (sameFather && sameMother) {
+    return "full_siblings" as const;
+  }
+
+  if (sameFather || sameMother) {
+    return "half_siblings" as const;
+  }
+
+  return null;
+}
+
+function resolveCloseRelation(animals: Animal[], leftId: string, rightId: string): CloseRelationType | null {
+  if (!leftId || !rightId || leftId === rightId) {
+    return null;
+  }
+
+  const byId = new Map(animals.map((animal) => [animal.id, animal]));
+  const leftAncestors = collectAncestorDepths(byId, leftId);
+  const rightAncestors = collectAncestorDepths(byId, rightId);
+
+  const leftToRightDepth = leftAncestors.get(rightId);
+  if (leftToRightDepth === 1) {
+    return "direct_parent_child";
+  }
+  if (leftToRightDepth === 2) {
+    return "direct_grandparent";
+  }
+  if (leftToRightDepth !== undefined) {
+    return "direct_ancestor";
+  }
+
+  const rightToLeftDepth = rightAncestors.get(leftId);
+  if (rightToLeftDepth === 1) {
+    return "direct_parent_child";
+  }
+  if (rightToLeftDepth === 2) {
+    return "direct_grandparent";
+  }
+  if (rightToLeftDepth !== undefined) {
+    return "direct_ancestor";
+  }
+
+  const siblingRelation = getSiblingRelation(byId, leftId, rightId);
+  if (siblingRelation) {
+    return siblingRelation;
+  }
+
+  const leftParents = getParentIds(byId.get(leftId));
+  const rightParents = getParentIds(byId.get(rightId));
+
+  const isAuntUncle =
+    leftParents.some((parentId) => Boolean(getSiblingRelation(byId, parentId, rightId))) ||
+    rightParents.some((parentId) => Boolean(getSiblingRelation(byId, leftId, parentId)));
+  if (isAuntUncle) {
+    return "aunt_uncle";
+  }
+
+  const isFirstCousins = leftParents.some((leftParentId) =>
+    rightParents.some((rightParentId) => Boolean(getSiblingRelation(byId, leftParentId, rightParentId)))
+  );
+  if (isFirstCousins) {
+    return "first_cousins";
+  }
+
+  return null;
 }
 
 function buildLayout(animals: Animal[]) {
@@ -273,6 +428,7 @@ function App() {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const modalOpenKey = modal ? `${modal.mode}:${modal.mode === "edit" ? modal.animalId : "new"}` : null;
+  const editAnimalId = modal?.mode === "edit" ? modal.animalId : null;
   const selectedAnimalIds = useMemo(
     () =>
       new Set(
@@ -280,6 +436,66 @@ function App() {
       ),
     [selectedParents]
   );
+  const descendantIds = useMemo(
+    () => (editAnimalId ? collectDescendantIds(animals, editAnimalId) : new Set<string>()),
+    [animals, editAnimalId]
+  );
+  const relatedParentsWarning = useMemo(() => {
+    if (!modal) {
+      return null;
+    }
+
+    const fatherId = modal.draft.fatherId || "";
+    const motherId = modal.draft.motherId || "";
+    if (!fatherId || !motherId || fatherId === motherId) {
+      return null;
+    }
+
+    const relation = resolveCloseRelation(animals, fatherId, motherId);
+    if (!relation) {
+      return null;
+    }
+
+    switch (relation) {
+      case "direct_parent_child":
+        return {
+          level: "high" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationDirectParentChild)
+        };
+      case "direct_grandparent":
+        return {
+          level: "high" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationDirectGrandparent)
+        };
+      case "direct_ancestor":
+        return {
+          level: "high" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationDirectAncestor)
+        };
+      case "full_siblings":
+        return {
+          level: "high" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationFullSiblings)
+        };
+      case "half_siblings":
+        return {
+          level: "high" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationHalfSiblings)
+        };
+      case "aunt_uncle":
+        return {
+          level: "medium" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationAuntUncle)
+        };
+      case "first_cousins":
+        return {
+          level: "medium" as RelationRiskLevel,
+          text: messages.relatedParentsRiskDescription(messages.relationFirstCousins)
+        };
+      default:
+        return null;
+    }
+  }, [animals, messages, modal]);
 
   useEffect(() => {
     saveAnimalsToStorage(animals);
@@ -372,8 +588,12 @@ function App() {
     );
   }, [canvasSize, formatDate, hoveredTarget, layout, messages, pan, selectedAnimalIds, zoom]);
 
-  const maleOptions = animals.filter((animal) => animal.gender === "male");
-  const femaleOptions = animals.filter((animal) => animal.gender === "female");
+  const maleOptions = animals.filter(
+    (animal) => animal.gender === "male" && animal.id !== editAnimalId && !descendantIds.has(animal.id)
+  );
+  const femaleOptions = animals.filter(
+    (animal) => animal.gender === "female" && animal.id !== editAnimalId && !descendantIds.has(animal.id)
+  );
   const editAnimalHasChildren =
     modal?.mode === "edit" &&
     animals.some((animal) => animal.fatherId === modal.animalId || animal.motherId === modal.animalId);
@@ -591,6 +811,16 @@ function App() {
       return;
     }
 
+    if (modal.mode === "edit" && normalizedFather && descendantIds.has(normalizedFather)) {
+      setFormError(messages.errorFatherDescendant);
+      return;
+    }
+
+    if (modal.mode === "edit" && normalizedMother && descendantIds.has(normalizedMother)) {
+      setFormError(messages.errorMotherDescendant);
+      return;
+    }
+
     if (!draft.name.trim()) {
       setFormError(messages.errorNameRequired);
       return;
@@ -768,13 +998,11 @@ function App() {
                   onChange={(event) => updateDraft("fatherId", event.target.value)}
                 >
                   <option value="">{messages.fatherPlaceholder}</option>
-                  {maleOptions
-                    .filter((animal) => animal.id !== modal.draft.id)
-                    .map((animal) => (
-                      <option key={animal.id} value={animal.id}>
-                        {animal.name}
-                      </option>
-                    ))}
+                  {maleOptions.map((animal) => (
+                    <option key={animal.id} value={animal.id}>
+                      {animal.name}
+                    </option>
+                  ))}
                 </select>
               </label>
 
@@ -785,13 +1013,11 @@ function App() {
                   onChange={(event) => updateDraft("motherId", event.target.value)}
                 >
                   <option value="">{messages.motherPlaceholder}</option>
-                  {femaleOptions
-                    .filter((animal) => animal.id !== modal.draft.id)
-                    .map((animal) => (
-                      <option key={animal.id} value={animal.id}>
-                        {animal.name}
-                      </option>
-                    ))}
+                  {femaleOptions.map((animal) => (
+                    <option key={animal.id} value={animal.id}>
+                      {animal.name}
+                    </option>
+                  ))}
                 </select>
               </label>
 
@@ -804,6 +1030,20 @@ function App() {
                   required
                 />
               </label>
+
+              {relatedParentsWarning ? (
+                <div
+                  className={relatedParentsWarning.level === "high" ? "form-warning form-warning-high" : "form-warning form-warning-medium"}
+                >
+                  <strong>
+                    {relatedParentsWarning.level === "high"
+                      ? messages.relatedParentsHighRiskTitle
+                      : messages.relatedParentsMediumRiskTitle}
+                    :
+                  </strong>{" "}
+                  {relatedParentsWarning.text}
+                </div>
+              ) : null}
 
               {formError ? <div className="form-error">{formError}</div> : null}
 
