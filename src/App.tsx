@@ -1,5 +1,5 @@
 import { FormEvent, PointerEvent, WheelEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Animal, AnimalGender, createAnimalId, loadAnimalsFromStorage, saveAnimalsToStorage } from "./animal-data";
+import { Animal, AnimalGender, createAnimalId, fetchAnimals, saveAnimals } from "./animal-data";
 import { localeOptions, useI18n } from "./i18n";
 
 type AnimalDraft = {
@@ -455,7 +455,8 @@ function App() {
     startY: 0,
     moved: false
   });
-  const [animals, setAnimals] = useState<Animal[]>(() => loadAnimalsFromStorage());
+  const [animals, setAnimals] = useState<Animal[]>([]);
+  const [animalsLoaded, setAnimalsLoaded] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -547,8 +548,35 @@ function App() {
   }, [animals, messages, modal]);
 
   useEffect(() => {
-    saveAnimalsToStorage(animals);
-  }, [animals]);
+    let cancelled = false;
+
+    const loadAnimals = async () => {
+      try {
+        const nextAnimals = await fetchAnimals();
+        if (!cancelled) {
+          setAnimals(nextAnimals);
+        }
+      } finally {
+        if (!cancelled) {
+          setAnimalsLoaded(true);
+        }
+      }
+    };
+
+    void loadAnimals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!animalsLoaded) {
+      return;
+    }
+
+    void saveAnimals(animals);
+  }, [animals, animalsLoaded]);
 
   useEffect(() => {
     const host = hostRef.current;

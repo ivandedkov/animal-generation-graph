@@ -17,49 +17,6 @@ type AnimalSnapshotV1 = {
 const STORAGE_KEY = "animal-generation-canvas";
 const CURRENT_SNAPSHOT_VERSION = 1;
 
-const initialAnimals: Animal[] = [
-  {
-    id: "animal-1",
-    name: "Арчи",
-    gender: "male",
-    fatherId: null,
-    motherId: null,
-    birthDate: "2020-04-03"
-  },
-  {
-    id: "animal-2",
-    name: "Белла",
-    gender: "female",
-    fatherId: null,
-    motherId: null,
-    birthDate: "2020-05-14"
-  },
-  {
-    id: "animal-3",
-    name: "Каштан",
-    gender: "male",
-    fatherId: "animal-1",
-    motherId: "animal-2",
-    birthDate: "2022-03-09"
-  },
-  {
-    id: "animal-4",
-    name: "Луна",
-    gender: "female",
-    fatherId: "animal-1",
-    motherId: "animal-2",
-    birthDate: "2022-03-09"
-  },
-  {
-    id: "animal-5",
-    name: "Ириска",
-    gender: "female",
-    fatherId: "animal-3",
-    motherId: "animal-4",
-    birthDate: "2024-02-18"
-  }
-];
-
 export function createAnimalId() {
   return `animal-${crypto.randomUUID()}`;
 }
@@ -73,24 +30,23 @@ export function createAnimalSnapshot(animals: Animal[]): AnimalSnapshotV1 {
 
 export function parseAnimalSnapshot(raw: unknown): Animal[] {
   const source = extractSnapshotPayload(raw);
-  const normalizedAnimals = normalizeAnimals(source);
-  return normalizedAnimals.length > 0 ? normalizedAnimals : initialAnimals.map((animal) => ({ ...animal }));
+  return normalizeAnimals(source);
 }
 
-export function loadAnimalsFromStorage(storage: Storage = window.localStorage): Animal[] {
+export async function fetchAnimals(storage: Storage = window.localStorage): Promise<Animal[]> {
   const raw = storage.getItem(STORAGE_KEY);
   if (!raw) {
-    return initialAnimals.map((animal) => ({ ...animal }));
+    return [];
   }
 
   try {
     return parseAnimalSnapshot(JSON.parse(raw));
   } catch {
-    return initialAnimals.map((animal) => ({ ...animal }));
+    return [];
   }
 }
 
-export function saveAnimalsToStorage(animals: Animal[], storage: Storage = window.localStorage) {
+export async function saveAnimals(animals: Animal[], storage: Storage = window.localStorage): Promise<void> {
   storage.setItem(STORAGE_KEY, JSON.stringify(createAnimalSnapshot(animals)));
 }
 
