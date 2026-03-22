@@ -8,6 +8,10 @@ type Messages = {
   documentTitle: string;
   add: string;
   recenter: string;
+  animalListTitle: string;
+  animalSearchLabel: string;
+  animalSearchPlaceholder: string;
+  animalListEmpty: string;
   help: string;
   helpTitle: string;
   helpItems: string[];
@@ -89,6 +93,10 @@ const messagesByLocale: Record<Locale, Messages> = {
     documentTitle: "Animal Generations",
     add: "Добавить",
     recenter: "Вернуться в центр",
+    animalListTitle: "Животные",
+    animalSearchLabel: "Поиск животных",
+    animalSearchPlaceholder: "Найти по имени",
+    animalListEmpty: "Ничего не найдено",
     help: "Подсказки",
     helpTitle: "Как пользоваться полем",
     helpItems: [
@@ -146,6 +154,10 @@ const messagesByLocale: Record<Locale, Messages> = {
     documentTitle: "Animal Generations",
     add: "Add",
     recenter: "Back to center",
+    animalListTitle: "Animals",
+    animalSearchLabel: "Search animals",
+    animalSearchPlaceholder: "Find by name",
+    animalListEmpty: "No matches found",
     help: "Help",
     helpTitle: "How to use the board",
     helpItems: [

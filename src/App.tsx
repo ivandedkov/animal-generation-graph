@@ -61,6 +61,9 @@ const DEFAULT_PAN = { x: 180, y: 0 };
 const DEFAULT_ZOOM = 1;
 const EMPTY_PARENT_SELECTION: SelectedParents = { fatherId: null, motherId: null };
 const EMPTY_HOVERED_TARGET: HoveredTarget = { animalId: null, area: null };
+const ANIMAL_NAME_COLLATOR = new Intl.Collator(["ru", "en"], { sensitivity: "base", numeric: true });
+const CYRILLIC_INITIAL_RE = /^\p{Script=Cyrillic}/u;
+const LATIN_INITIAL_RE = /^\p{Script=Latin}/u;
 
 function todayValue() {
   const now = new Date();
@@ -77,6 +80,42 @@ const emptyDraft = (): AnimalDraft => ({
   motherId: "",
   birthDate: todayValue()
 });
+
+function getAnimalAlphabetBucket(name: string) {
+  const normalizedName = name.trim();
+  if (CYRILLIC_INITIAL_RE.test(normalizedName)) {
+    return 0;
+  }
+
+  if (LATIN_INITIAL_RE.test(normalizedName)) {
+    return 1;
+  }
+
+  return 2;
+}
+
+function compareAnimalsAlphabetically(left: Animal, right: Animal) {
+  const leftBucket = getAnimalAlphabetBucket(left.name);
+  const rightBucket = getAnimalAlphabetBucket(right.name);
+  if (leftBucket !== rightBucket) {
+    return leftBucket - rightBucket;
+  }
+
+  const byName = ANIMAL_NAME_COLLATOR.compare(left.name, right.name);
+  if (byName !== 0) {
+    return byName;
+  }
+
+  if (left.birthDate !== right.birthDate) {
+    return left.birthDate.localeCompare(right.birthDate);
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+function normalizeSearchValue(value: string, locale: string) {
+  return value.trim().toLocaleLowerCase(locale);
+}
 
 function computeGenerations(animals: Animal[]) {
   const byId = new Map(animals.map((animal) => [animal.id, animal]));
@@ -424,6 +463,8 @@ function App() {
   const [selectedParents, setSelectedParents] = useState<SelectedParents>(EMPTY_PARENT_SELECTION);
   const [hoveredTarget, setHoveredTarget] = useState<HoveredTarget>(EMPTY_HOVERED_TARGET);
   const [isPanning, setIsPanning] = useState(false);
+  const [isAnimalListOpen, setIsAnimalListOpen] = useState(false);
+  const [animalSearch, setAnimalSearch] = useState("");
   const [pan, setPan] = useState(DEFAULT_PAN);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
@@ -440,6 +481,14 @@ function App() {
     () => (editAnimalId ? collectDescendantIds(animals, editAnimalId) : new Set<string>()),
     [animals, editAnimalId]
   );
+  const visibleAnimals = useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(animalSearch, locale);
+
+    return animals
+      .slice()
+      .sort(compareAnimalsAlphabetically)
+      .filter((animal) => normalizeSearchValue(animal.name, locale).includes(normalizedQuery));
+  }, [animalSearch, animals, locale]);
   const relatedParentsWarning = useMemo(() => {
     if (!modal) {
       return null;
@@ -688,6 +737,21 @@ function App() {
     });
   };
 
+  const focusAnimal = (animalId: string) => {
+    const node = layout.get(animalId);
+    if (!node) {
+      return;
+    }
+
+    const anchor = getCanvasAnchor(canvasSize.width, canvasSize.height);
+    setPan({
+      x: canvasSize.width / 2 - anchor.x - node.x * zoom,
+      y: canvasSize.height / 2 - anchor.y - node.y * zoom
+    });
+    setHoveredTarget({ animalId, area: "node" });
+    setIsPanning(false);
+  };
+
   const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     if (event.button !== 0) {
       return;
@@ -905,17 +969,77 @@ function App() {
           onWheel={onWheel}
         />
 
-        <div className="overlay-panel">
-          <div className="overlay-actions">
-            <button className="icon-button" type="button" onClick={() => setHelpOpen(true)} aria-label={messages.help}>
-              <span aria-hidden="true">?</span>
+        <div className="overlay-stack">
+          <div className="overlay-panel">
+            <div className="overlay-actions">
+              <button className="icon-button" type="button" onClick={() => setHelpOpen(true)} aria-label={messages.help}>
+                <span aria-hidden="true">?</span>
+              </button>
+              <button className="ghost-button" type="button" onClick={resetView}>
+                {messages.recenter}
+              </button>
+              <button className="primary-button" type="button" onClick={() => openCreateModal(selectedParents)}>
+                {messages.add}
+              </button>
+            </div>
+          </div>
+
+          <div className="animal-browser-panel">
+            <button
+              className="animal-browser-toggle"
+              type="button"
+              onClick={() => setIsAnimalListOpen((current) => !current)}
+              aria-expanded={isAnimalListOpen}
+            >
+              <span>{messages.animalListTitle}</span>
+              <span className="animal-browser-toggle-icon" aria-hidden="true">
+                {isAnimalListOpen ? "−" : "+"}
+              </span>
             </button>
-            <button className="ghost-button" type="button" onClick={resetView}>
-              {messages.recenter}
-            </button>
-            <button className="primary-button" type="button" onClick={() => openCreateModal(selectedParents)}>
-              {messages.add}
-            </button>
+
+            {isAnimalListOpen ? (
+              <div className="animal-browser-body">
+                <input
+                  className="animal-search-input"
+                  type="search"
+                  value={animalSearch}
+                  onChange={(event) => setAnimalSearch(event.target.value)}
+                  placeholder={messages.animalSearchPlaceholder}
+                  aria-label={messages.animalSearchLabel}
+                />
+
+                <ul className="animal-list">
+                  {visibleAnimals.length > 0 ? (
+                    visibleAnimals.map((animal) => {
+                      const isSelected = selectedAnimalIds.has(animal.id);
+
+                      return (
+                        <li key={animal.id}>
+                          <button
+                            className={isSelected ? "animal-list-item animal-list-item-selected" : "animal-list-item"}
+                            type="button"
+                            onClick={() => focusAnimal(animal.id)}
+                            aria-pressed={isSelected}
+                          >
+                            <i
+                              className={
+                                animal.gender === "male"
+                                  ? "animal-list-dot animal-list-dot-male"
+                                  : "animal-list-dot animal-list-dot-female"
+                              }
+                              aria-hidden="true"
+                            />
+                            <span>{animal.name}</span>
+                          </button>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="animal-list-empty">{messages.animalListEmpty}</li>
+                  )}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
 
