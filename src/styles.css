@@ -76,11 +76,14 @@ button {
   z-index: 2;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
-  width: min(320px, calc(100vw - 56px));
+  max-width: calc(100vw - 56px);
 }
 
 .overlay-panel {
+  width: fit-content;
+  max-width: 100%;
   padding: 12px;
   border-radius: 20px;
 }
@@ -89,7 +92,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .locale-panel {
@@ -108,6 +111,7 @@ button {
 }
 
 .animal-browser-panel {
+  width: min(320px, calc(100vw - 56px));
   flex-direction: column;
   align-items: stretch;
   padding: 8px;
@@ -527,7 +531,18 @@ button {
     top: 20px;
     left: 20px;
     right: 20px;
-    width: auto;
+    align-items: stretch;
+    max-width: none;
+  }
+
+  .overlay-panel,
+  .animal-browser-panel {
+    width: 100%;
+    max-width: none;
+  }
+
+  .overlay-actions {
+    flex-wrap: wrap;
   }
 
   .locale-panel {
