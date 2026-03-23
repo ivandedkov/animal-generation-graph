@@ -1,5 +1,6 @@
 import { FormEvent, PointerEvent, WheelEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Animal, AnimalGender, createAnimalId, fetchAnimals, saveAnimals } from "./animal-data";
+import editPencilUrl from "./assets/icons/edit-pencil.svg";
 import { localeOptions, useI18n } from "./i18n";
 
 type AnimalDraft = {
@@ -469,6 +470,7 @@ function App() {
   const [pan, setPan] = useState(DEFAULT_PAN);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
+  const [editButtonIcon, setEditButtonIcon] = useState<HTMLImageElement | null>(null);
   const modalOpenKey = modal ? `${modal.mode}:${modal.mode === "edit" ? modal.animalId : "new"}` : null;
   const editAnimalId = modal?.mode === "edit" ? modal.animalId : null;
   const selectedAnimalIds = useMemo(
@@ -579,6 +581,27 @@ function App() {
   }, [animals, animalsLoaded]);
 
   useEffect(() => {
+    let cancelled = false;
+    const image = new Image();
+
+    image.onload = () => {
+      if (!cancelled) {
+        setEditButtonIcon(image);
+      }
+    };
+    image.onerror = () => {
+      if (!cancelled) {
+        setEditButtonIcon(null);
+      }
+    };
+    image.src = editPencilUrl;
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const host = hostRef.current;
     if (!host) {
       return;
@@ -661,9 +684,10 @@ function App() {
       formatDate,
       messages.generation,
       selectedAnimalIds,
-      hoveredTarget
+      hoveredTarget,
+      editButtonIcon
     );
-  }, [canvasSize, formatDate, hoveredTarget, layout, messages, pan, selectedAnimalIds, zoom]);
+  }, [canvasSize, editButtonIcon, formatDate, hoveredTarget, layout, messages, pan, selectedAnimalIds, zoom]);
 
   const maleOptions = animals.filter(
     (animal) => animal.gender === "male" && animal.id !== editAnimalId && !descendantIds.has(animal.id)
@@ -1304,7 +1328,8 @@ function drawGraph(
   formatDate: (value: string) => string,
   formatGeneration: (value: number) => string,
   selectedAnimalIds: Set<string>,
-  hoveredTarget: HoveredTarget
+  hoveredTarget: HoveredTarget,
+  editButtonIcon: CanvasImageSource | null
 ) {
   const anchor = getCanvasAnchor(width, height);
 
@@ -1391,13 +1416,18 @@ function drawGraph(
     context.font = "500 11px ui-sans-serif, system-ui, sans-serif";
     context.fillText(formatDate(node.animal.birthDate), node.x - node.width / 2 + 40, node.y + 24);
 
-    drawGearButton(context, node, isHoveredGear);
+    drawGearButton(context, node, isHoveredGear, editButtonIcon);
   });
 
   context.restore();
 }
 
-function drawGearButton(context: CanvasRenderingContext2D, node: NodeLayout, isHovered: boolean) {
+function drawGearButton(
+  context: CanvasRenderingContext2D,
+  node: NodeLayout,
+  isHovered: boolean,
+  editButtonIcon: CanvasImageSource | null
+) {
   const { x, y } = getGearButtonCenter(node);
 
   context.save();
@@ -1412,23 +1442,11 @@ function drawGearButton(context: CanvasRenderingContext2D, node: NodeLayout, isH
   context.stroke();
 
   context.shadowColor = "transparent";
-  context.strokeStyle = isHovered ? "#2f6fc7" : "#51627d";
-  context.lineWidth = 1.5;
 
-  for (let index = 0; index < 8; index += 1) {
-    const angle = (Math.PI / 4) * index;
-    const innerRadius = 4;
-    const outerRadius = 6.5;
-
-    context.beginPath();
-    context.moveTo(x + Math.cos(angle) * innerRadius, y + Math.sin(angle) * innerRadius);
-    context.lineTo(x + Math.cos(angle) * outerRadius, y + Math.sin(angle) * outerRadius);
-    context.stroke();
+  if (editButtonIcon) {
+    const iconSize = 12;
+    context.drawImage(editButtonIcon, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize);
   }
-
-  context.beginPath();
-  context.arc(x, y, 4.5, 0, Math.PI * 2);
-  context.stroke();
 
   context.restore();
 }

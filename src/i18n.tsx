@@ -101,7 +101,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     helpTitle: "Как пользоваться полем",
     helpItems: [
       "Левый клик по животному выбирает родителя по полу.",
-      "Шестеренка в правом нижнем углу ячейки открывает редактирование.",
+      "Кнопка с карандашом в правом нижнем углу ячейки открывает редактирование.",
       "Клик по пустому месту сбрасывает текущий выбор родителей.",
       "Пустое место можно перетаскивать, чтобы двигать поле.",
       "Колесо мыши меняет масштаб."
@@ -162,7 +162,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     helpTitle: "How to use the board",
     helpItems: [
       "Left-click an animal to choose a parent based on its gender.",
-      "Use the gear button in the card's bottom-right corner to open editing.",
+      "Use the pencil button in the card's bottom-right corner to open editing.",
       "Click empty space to clear the current parent selection.",
       "Drag empty space to move around the board.",
       "Use the mouse wheel to zoom."
