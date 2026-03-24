@@ -1044,7 +1044,7 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
                       const isSelected = selectedAnimalIds.has(animal.id);
 
                       return (
-                        <li key={animal.id}>
+                        <li key={animal.id} className="animal-list-row">
                           <button
                             className={isSelected ? "animal-list-item animal-list-item-selected" : "animal-list-item"}
                             type="button"
@@ -1060,6 +1060,15 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
                               aria-hidden="true"
                             />
                             <span>{animal.name}</span>
+                          </button>
+                          <button
+                            className="animal-list-profile-button"
+                            type="button"
+                            onClick={() => openAnimalProfile(animal.id)}
+                            aria-label={`${messages.openProfile}: ${animal.name}`}
+                            title={messages.openProfile}
+                          >
+                            <img src={editPencilUrl} alt="" aria-hidden="true" />
                           </button>
                         </li>
                       );
