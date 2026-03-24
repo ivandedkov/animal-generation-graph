@@ -4,10 +4,11 @@ export const supportedLocales = ["ru", "en"] as const;
 
 export type Locale = (typeof supportedLocales)[number];
 
-type Messages = {
+export type Messages = {
   documentTitle: string;
   add: string;
   recenter: string;
+  backToBoard: string;
   animalListTitle: string;
   animalSearchLabel: string;
   animalSearchPlaceholder: string;
@@ -39,7 +40,27 @@ type Messages = {
   confirmDeleteAction: string;
   cancel: string;
   save: string;
+  openProfile: string;
   noDate: string;
+  profileGeneralTab: string;
+  profileKiddingTab: string;
+  profileVaccinesTab: string;
+  profileSummaryTitle: string;
+  profileFamilyTitle: string;
+  profileParentsTitle: string;
+  profileChildrenTitle: string;
+  profileFatherUnknown: string;
+  profileMotherUnknown: string;
+  profileNoChildren: string;
+  profileGeneralDescription: string;
+  profileKiddingDescription: string;
+  profileVaccinesDescription: string;
+  profileKiddingEmptyTitle: string;
+  profileKiddingEmptyDescription: string;
+  profileVaccinesEmptyTitle: string;
+  profileVaccinesEmptyDescription: string;
+  profileNotFoundTitle: string;
+  profileNotFoundDescription: string;
   generation: (value: number) => string;
   relatedParentsHighRiskTitle: string;
   relatedParentsMediumRiskTitle: string;
@@ -93,6 +114,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     documentTitle: "Animal Generations",
     add: "Добавить",
     recenter: "Вернуться в центр",
+    backToBoard: "Назад к схеме",
     animalListTitle: "Животные",
     animalSearchLabel: "Поиск животных",
     animalSearchPlaceholder: "Найти по имени",
@@ -101,7 +123,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     helpTitle: "Как пользоваться полем",
     helpItems: [
       "Левый клик по животному выбирает родителя по полу.",
-      "Кнопка с карандашом в правом нижнем углу ячейки открывает редактирование.",
+      "Кнопка с карандашом в правом нижнем углу ячейки открывает профиль животного.",
       "Клик по пустому месту сбрасывает текущий выбор родителей.",
       "Пустое место можно перетаскивать, чтобы двигать поле.",
       "Колесо мыши меняет масштаб."
@@ -130,7 +152,27 @@ const messagesByLocale: Record<Locale, Messages> = {
     confirmDeleteAction: "Да, удалить",
     cancel: "Отмена",
     save: "Сохранить",
+    openProfile: "Профиль",
     noDate: "Без даты",
+    profileGeneralTab: "Общее",
+    profileKiddingTab: "Окоты",
+    profileVaccinesTab: "Прививки",
+    profileSummaryTitle: "Сводка",
+    profileFamilyTitle: "Семья",
+    profileParentsTitle: "Родители",
+    profileChildrenTitle: "Потомки",
+    profileFatherUnknown: "Отец не указан",
+    profileMotherUnknown: "Мать не указана",
+    profileNoChildren: "Потомков пока нет",
+    profileGeneralDescription: "Базовые данные животного.",
+    profileKiddingDescription: "Заготовка под журнал окотов, беременностей и заметок по потомству.",
+    profileVaccinesDescription: "Заготовка под журнал профилактики и календарь прививок.",
+    profileKiddingEmptyTitle: "Журнал окотов появится здесь",
+    profileKiddingEmptyDescription: "Пока можно хранить заметки по беременности, окоту и количеству козлят.",
+    profileVaccinesEmptyTitle: "Журнал прививок появится здесь",
+    profileVaccinesEmptyDescription: "Пока можно оставить базовый шаблон под последнюю и следующую вакцинацию.",
+    profileNotFoundTitle: "Животное не найдено",
+    profileNotFoundDescription: "Похоже, карточка была удалена или ссылка устарела.",
     generation: (value) => `Поколение ${value}`,
     relatedParentsHighRiskTitle: "Высокий риск",
     relatedParentsMediumRiskTitle: "Средний риск",
@@ -154,6 +196,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     documentTitle: "Animal Generations",
     add: "Add",
     recenter: "Back to center",
+    backToBoard: "Back to board",
     animalListTitle: "Animals",
     animalSearchLabel: "Search animals",
     animalSearchPlaceholder: "Find by name",
@@ -162,7 +205,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     helpTitle: "How to use the board",
     helpItems: [
       "Left-click an animal to choose a parent based on its gender.",
-      "Use the pencil button in the card's bottom-right corner to open editing.",
+      "Use the pencil button in the card's bottom-right corner to open the animal profile.",
       "Click empty space to clear the current parent selection.",
       "Drag empty space to move around the board.",
       "Use the mouse wheel to zoom."
@@ -191,7 +234,27 @@ const messagesByLocale: Record<Locale, Messages> = {
     confirmDeleteAction: "Yes, delete",
     cancel: "Cancel",
     save: "Save",
+    openProfile: "Profile",
     noDate: "No date",
+    profileGeneralTab: "General",
+    profileKiddingTab: "Kidding",
+    profileVaccinesTab: "Vaccines",
+    profileSummaryTitle: "Summary",
+    profileFamilyTitle: "Family",
+    profileParentsTitle: "Parents",
+    profileChildrenTitle: "Offspring",
+    profileFatherUnknown: "Father not specified",
+    profileMotherUnknown: "Mother not specified",
+    profileNoChildren: "No offspring yet",
+    profileGeneralDescription: "Core animal data.",
+    profileKiddingDescription: "Starter area for a future kidding log, pregnancy notes, and litter details.",
+    profileVaccinesDescription: "Starter area for preventive care records and vaccine reminders.",
+    profileKiddingEmptyTitle: "The kidding log will live here",
+    profileKiddingEmptyDescription: "For now this can hold pregnancy notes, kidding outcomes, and kid counts.",
+    profileVaccinesEmptyTitle: "The vaccination log will live here",
+    profileVaccinesEmptyDescription: "For now this is a small placeholder for last and next vaccination details.",
+    profileNotFoundTitle: "Animal not found",
+    profileNotFoundDescription: "This card may have been deleted or the link is outdated.",
     generation: (value) => `Generation ${value}`,
     relatedParentsHighRiskTitle: "High risk",
     relatedParentsMediumRiskTitle: "Medium risk",
