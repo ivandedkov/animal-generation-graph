@@ -28,7 +28,7 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       en: "Core clostridial and tetanus protection for sheep and goats."
     },
     intervalLabel: {
-      ru: "Обычно ежегодно",
+      ru: "Ежегодно",
       en: "Usually yearly"
     },
     timingLabel: {
@@ -54,7 +54,7 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       en: "Zoonotic vaccine, especially relevant in endemic regions and for show animals."
     },
     intervalLabel: {
-      ru: "Обычно ежегодно",
+      ru: "Ежегодно",
       en: "Usually yearly"
     },
     timingLabel: {
@@ -132,7 +132,7 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       en: "Vaccine for farms where CL is already present or risk is considered meaningful."
     },
     intervalLabel: {
-      ru: "Чаще ежегодно",
+      ru: "Ежегодно",
       en: "Often yearly"
     },
     timingLabel: {
