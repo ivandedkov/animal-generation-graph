@@ -870,8 +870,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                         onChange={(event) => updateVaccinationDate(vaccination.id, event.target.value)}
                       />
                     </label>
-
-                    <div className="field-hint">{vaccination.note}</div>
                   </article>
                 ))}
               </div>

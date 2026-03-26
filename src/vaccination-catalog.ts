@@ -10,7 +10,6 @@ export type VaccinationDefinition = {
   description: Record<Locale, string>;
   intervalLabel: Record<Locale, string>;
   timingLabel: Record<Locale, string>;
-  note: Record<Locale, string>;
 };
 
 export const vaccinationCatalog: VaccinationDefinition[] = [
@@ -35,10 +34,6 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       ru: "Часто за 2–4 недели до окота у беременных самок",
       en: "Often 2–4 weeks before lambing/kidding in pregnant females"
     },
-    note: {
-      ru: "После первичной серии бустер обычно повторяют раз в год.",
-      en: "After the primary series, the booster is commonly repeated once a year."
-    }
   },
   {
     id: "rabies",
@@ -61,10 +56,6 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       ru: "По региональному риску и схеме ветеринара",
       en: "Based on regional risk and veterinarian guidance"
     },
-    note: {
-      ru: "Частота зависит от препарата и региона, но в базовом календаре используется годовой интервал.",
-      en: "Frequency depends on product and region, but the base planner uses a yearly interval."
-    }
   },
   {
     id: "vibriosis",
@@ -87,10 +78,6 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       ru: "До случки; первичная схема обычно в 2 дозы с интервалом 2–4 недели",
       en: "Before breeding; primary series is commonly 2 doses given 2–4 weeks apart"
     },
-    note: {
-      ru: "В приложении следующая дата считается как +12 месяцев от последней записи.",
-      en: "The app calculates the next date as +12 months from the last recorded dose."
-    }
   },
   {
     id: "chlamydia",
@@ -113,10 +100,6 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       ru: "До случки; для новых самок часто делают 2 дозы за 60 и 30 дней до случки",
       en: "Before breeding; new females often receive 2 doses at 60 and 30 days before breeding"
     },
-    note: {
-      ru: "После первичной схемы большинство базовых протоколов ведут эту прививку как ежегодную.",
-      en: "After the primary course, many baseline protocols treat this vaccine as annual."
-    }
   },
   {
     id: "cl",
@@ -139,10 +122,6 @@ export const vaccinationCatalog: VaccinationDefinition[] = [
       ru: "Только по согласованной схеме с ветеринаром",
       en: "Only as part of a veterinarian-approved herd plan"
     },
-    note: {
-      ru: "Для чистых хозяйств вакцина обычно не рекомендуется.",
-      en: "Vaccination is usually not recommended for clean herds/flocks."
-    }
   }
 ];
 
@@ -154,8 +133,7 @@ export function getVaccinationDefinitions(locale: Locale, gender: AnimalGender) 
       title: definition.title[locale],
       description: definition.description[locale],
       intervalLabel: definition.intervalLabel[locale],
-      timingLabel: definition.timingLabel[locale],
-      note: definition.note[locale]
+      timingLabel: definition.timingLabel[locale]
     }));
 }
 

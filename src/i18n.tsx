@@ -75,8 +75,6 @@ export type Messages = {
   profileVaccinesStatusOverdue: string;
   profileKiddingEmptyTitle: string;
   profileKiddingEmptyDescription: string;
-  profileVaccinesEmptyTitle: string;
-  profileVaccinesEmptyDescription: string;
   profileNotFoundTitle: string;
   profileNotFoundDescription: string;
   generation: (value: number) => string;
@@ -206,8 +204,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileVaccinesStatusOverdue: "Просрочена",
     profileKiddingEmptyTitle: "Журнал окотов появится здесь",
     profileKiddingEmptyDescription: "Пока можно хранить заметки по беременности, окоту и количеству козлят.",
-    profileVaccinesEmptyTitle: "Журнал прививок появится здесь",
-    profileVaccinesEmptyDescription: "Пока можно оставить базовый шаблон под последнюю и следующую вакцинацию.",
     profileNotFoundTitle: "Животное не найдено",
     profileNotFoundDescription: "Похоже, карточка была удалена или ссылка устарела.",
     generation: (value) => `Поколение ${value}`,
@@ -307,8 +303,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileVaccinesStatusOverdue: "Overdue",
     profileKiddingEmptyTitle: "The kidding log will live here",
     profileKiddingEmptyDescription: "For now this can hold pregnancy notes, kidding outcomes, and kid counts.",
-    profileVaccinesEmptyTitle: "The vaccination log will live here",
-    profileVaccinesEmptyDescription: "For now this is a small placeholder for last and next vaccination details.",
     profileNotFoundTitle: "Animal not found",
     profileNotFoundDescription: "This card may have been deleted or the link is outdated.",
     generation: (value) => `Generation ${value}`,
