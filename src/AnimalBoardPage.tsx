@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Animal, AnimalGender, createAnimalId } from "./animal-data";
 import editPencilUrl from "./assets/icons/edit-pencil.svg";
 import breedingHeartUrl from "./assets/icons/breeding-heart.svg";
+import { openDateInputPicker } from "./date-input";
 import { localeOptions, useI18n } from "./i18n";
 
 type AnimalDraft = {
@@ -1273,6 +1274,7 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
                   type="date"
                   value={modal.draft.birthDate}
                   onChange={(event) => updateDraft("birthDate", event.target.value)}
+                  onClick={openDateInputPicker}
                   required
                 />
               </label>

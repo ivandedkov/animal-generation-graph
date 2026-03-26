@@ -1,6 +1,7 @@
 import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Animal, AnimalGender, AnimalVaccination } from "./animal-data";
+import { openDateInputPicker } from "./date-input";
 import { Messages, localeOptions, useI18n } from "./i18n";
 import { calculateNextVaccinationDate, getVaccinationDefinitions, vaccinationCatalog } from "./vaccination-catalog";
 
@@ -724,6 +725,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                     type="date"
                     value={draft.birthDate}
                     onChange={(event) => updateDraft("birthDate", event.target.value)}
+                    onClick={openDateInputPicker}
                     required
                   />
                 </label>
@@ -868,6 +870,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                         type="date"
                         value={vaccination.lastDate}
                         onChange={(event) => updateVaccinationDate(vaccination.id, event.target.value)}
+                        onClick={openDateInputPicker}
                       />
                     </label>
                   </article>
