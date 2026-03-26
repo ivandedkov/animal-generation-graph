@@ -1,7 +1,8 @@
 import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Animal, AnimalGender } from "./animal-data";
+import { Animal, AnimalGender, AnimalVaccination } from "./animal-data";
 import { Messages, localeOptions, useI18n } from "./i18n";
+import { calculateNextVaccinationDate, getVaccinationDefinitions, vaccinationCatalog } from "./vaccination-catalog";
 
 type AnimalDraft = {
   name: string;
@@ -30,6 +31,7 @@ type CloseRelationType =
   | "first_cousins";
 
 type RelationRiskLevel = "high" | "medium";
+type VaccinationStatus = "missing" | "current" | "due_soon" | "overdue";
 
 const MAX_NAME_LENGTH = 20;
 const NAME_COLLATOR = new Intl.Collator(["ru", "en"], { sensitivity: "base", numeric: true });
@@ -43,6 +45,10 @@ function createDraft(animal: Animal): AnimalDraft {
     birthDate: animal.birthDate,
     isBreedingApproved: animal.isBreedingApproved
   };
+}
+
+function createVaccinationDraft(animal: Animal) {
+  return Object.fromEntries(animal.vaccinations.map((record) => [record.vaccineId, record.lastDate]));
 }
 
 function getParentIds(animal: Animal | undefined) {
@@ -228,6 +234,46 @@ function buildParentOptions(
   );
 }
 
+function buildVaccinationRecords(draft: Record<string, string>): AnimalVaccination[] {
+  return vaccinationCatalog.flatMap((definition) => {
+    const lastDate = draft[definition.id]?.trim();
+    return lastDate ? [{ vaccineId: definition.id, lastDate }] : [];
+  });
+}
+
+function daysBetween(from: string, to: string) {
+  const [fromYear, fromMonth, fromDay] = from.split("-").map(Number);
+  const [toYear, toMonth, toDay] = to.split("-").map(Number);
+  const fromDate = Date.UTC(fromYear, (fromMonth || 1) - 1, fromDay || 1);
+  const toDate = Date.UTC(toYear, (toMonth || 1) - 1, toDay || 1);
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+  return Math.round((toDate - fromDate) / millisecondsPerDay);
+}
+
+function getVaccinationStatus(lastDate: string, nextDate: string, today: string): VaccinationStatus {
+  if (!lastDate || !nextDate) {
+    return "missing";
+  }
+
+  if (nextDate < today) {
+    return "overdue";
+  }
+
+  if (daysBetween(today, nextDate) <= 30) {
+    return "due_soon";
+  }
+
+  return "current";
+}
+
+function todayValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getRelationWarning(animals: Animal[], fatherId: string, motherId: string, messages: Messages) {
   if (!fatherId || !motherId || fatherId === motherId) {
     return null;
@@ -353,6 +399,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   const { locale, setLocale, messages, formatDate } = useI18n();
   const [activeTab, setActiveTab] = useState<ProfileTab>("general");
   const [draft, setDraft] = useState<AnimalDraft | null>(null);
+  const [vaccinationDraft, setVaccinationDraft] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -361,6 +408,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   useEffect(() => {
     if (animal) {
       setDraft(createDraft(animal));
+      setVaccinationDraft(createVaccinationDraft(animal));
       setFormError("");
       setDeleteConfirmOpen(false);
     }
@@ -395,6 +443,25 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     () => (draft ? getRelationWarning(animals, draft.fatherId, draft.motherId, messages) : null),
     [animals, draft, messages]
   );
+  const vaccinationDefinitions = useMemo(
+    () => (animal ? getVaccinationDefinitions(locale, animal.gender) : []),
+    [animal, locale]
+  );
+  const vaccinationCards = useMemo(() => {
+    const today = todayValue();
+
+    return vaccinationDefinitions.map((definition) => {
+      const lastDate = vaccinationDraft[definition.id] ?? "";
+      const nextDate = calculateNextVaccinationDate(lastDate, definition.intervalMonths);
+
+      return {
+        ...definition,
+        lastDate,
+        nextDate,
+        status: getVaccinationStatus(lastDate, nextDate, today)
+      };
+    });
+  }, [vaccinationDefinitions, vaccinationDraft]);
   const hasChildren = Boolean(animal && children.length > 0);
 
   if (!animalsLoaded) {
@@ -439,6 +506,28 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   const updateDraft = <K extends keyof AnimalDraft>(key: K, value: AnimalDraft[K]) => {
     setFormError("");
     setDraft((current) => (current ? { ...current, [key]: value } : current));
+  };
+
+  const updateVaccinationDate = (vaccineId: string, value: string) => {
+    setVaccinationDraft((current) => {
+      const nextDraft = {
+        ...current,
+        [vaccineId]: value
+      };
+
+      setAnimals((currentAnimals) =>
+        currentAnimals.map((entry) =>
+          entry.id === animal.id
+            ? {
+                ...entry,
+                vaccinations: buildVaccinationRecords(nextDraft)
+              }
+            : entry
+        )
+      );
+
+      return nextDraft;
+    });
   };
 
   const saveProfile = (event: FormEvent<HTMLFormElement>) => {
@@ -705,14 +794,86 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
               <div className="profile-placeholder-grid">
                 <article className="profile-placeholder-card">
                   <span>{messages.profileVaccinesTab}</span>
-                  <strong>{messages.profileVaccinesEmptyTitle}</strong>
-                  <p>{messages.profileVaccinesEmptyDescription}</p>
+                  <strong>{messages.profileVaccinesIntroTitle}</strong>
+                  <p>{messages.profileVaccinesIntroDescription}</p>
                 </article>
                 <article className="profile-placeholder-card">
-                  <span>{messages.birthDate}</span>
-                  <strong>{formatDate(animal.birthDate)}</strong>
-                  <p>{messages.profileVaccinesDescription}</p>
+                  <span>{messages.profileVaccinesLastDate}</span>
+                  <strong>{messages.profileVaccinesNextDate}</strong>
+                  <p>{messages.profileVaccinesAutoSaveHint}</p>
                 </article>
+              </div>
+
+              <div className="profile-vaccines-grid">
+                {vaccinationCards.map((vaccination) => (
+                  <article key={vaccination.id} className="profile-vaccine-card">
+                    <div className="profile-vaccine-head">
+                      <div className="profile-vaccine-copy">
+                        <div className="profile-vaccine-title-row">
+                          <h3>{vaccination.title}</h3>
+                          <span
+                            className={
+                              vaccination.status === "overdue"
+                                ? "profile-vaccine-status profile-vaccine-status-overdue"
+                                : vaccination.status === "due_soon"
+                                  ? "profile-vaccine-status profile-vaccine-status-soon"
+                                  : vaccination.status === "current"
+                                    ? "profile-vaccine-status profile-vaccine-status-current"
+                                    : "profile-vaccine-status profile-vaccine-status-missing"
+                            }
+                          >
+                            {vaccination.status === "overdue"
+                              ? messages.profileVaccinesStatusOverdue
+                              : vaccination.status === "due_soon"
+                                ? messages.profileVaccinesStatusDueSoon
+                                : vaccination.status === "current"
+                                  ? messages.profileVaccinesStatusCurrent
+                                  : messages.profileVaccinesStatusMissing}
+                          </span>
+                        </div>
+                        <p>{vaccination.description}</p>
+                      </div>
+
+                      <span
+                        className={
+                          vaccination.category === "core"
+                            ? "profile-vaccine-kind profile-vaccine-kind-core"
+                            : "profile-vaccine-kind profile-vaccine-kind-risk"
+                        }
+                      >
+                        {vaccination.category === "core"
+                          ? messages.profileVaccinesCoreBadge
+                          : messages.profileVaccinesRiskBadge}
+                      </span>
+                    </div>
+
+                    <div className="profile-vaccine-meta">
+                      <article className="profile-stat-card">
+                        <span>{messages.profileVaccinesInterval}</span>
+                        <strong>{vaccination.intervalLabel}</strong>
+                      </article>
+                      <article className="profile-stat-card">
+                        <span>{messages.profileVaccinesTiming}</span>
+                        <strong>{vaccination.timingLabel}</strong>
+                      </article>
+                      <article className="profile-stat-card">
+                        <span>{messages.profileVaccinesNextDate}</span>
+                        <strong>{formatDate(vaccination.nextDate)}</strong>
+                      </article>
+                    </div>
+
+                    <label className="profile-vaccine-input">
+                      {messages.profileVaccinesLastDate}
+                      <input
+                        type="date"
+                        value={vaccination.lastDate}
+                        onChange={(event) => updateVaccinationDate(vaccination.id, event.target.value)}
+                      />
+                    </label>
+
+                    <div className="field-hint">{vaccination.note}</div>
+                  </article>
+                ))}
               </div>
             </section>
           </div>

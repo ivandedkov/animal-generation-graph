@@ -784,6 +784,126 @@ button {
   margin-top: 8px;
 }
 
+.profile-vaccines-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.profile-vaccine-card {
+  border-radius: 24px;
+  padding: 20px;
+  background: rgba(247, 249, 253, 0.96);
+  border: 1px solid rgba(110, 128, 160, 0.14);
+  display: grid;
+  gap: 16px;
+}
+
+.profile-vaccine-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.profile-vaccine-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-vaccine-copy p {
+  margin: 0;
+  color: rgba(24, 49, 83, 0.68);
+}
+
+.profile-vaccine-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-vaccine-title-row h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.profile-vaccine-status,
+.profile-vaccine-kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.profile-vaccine-status-missing {
+  background: rgba(130, 145, 167, 0.14);
+  color: #5d697a;
+}
+
+.profile-vaccine-status-current {
+  background: rgba(131, 181, 104, 0.16);
+  color: #456b2f;
+}
+
+.profile-vaccine-status-soon {
+  background: rgba(215, 164, 53, 0.16);
+  color: #8a5a04;
+}
+
+.profile-vaccine-status-overdue {
+  background: rgba(209, 75, 106, 0.14);
+  color: #a53358;
+}
+
+.profile-vaccine-kind-core {
+  background: rgba(79, 137, 223, 0.14);
+  color: #2f62ad;
+}
+
+.profile-vaccine-kind-risk {
+  background: rgba(124, 130, 160, 0.14);
+  color: #5c6477;
+}
+
+.profile-vaccine-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-vaccine-meta .profile-stat-card strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.profile-vaccine-input {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(24, 49, 83, 0.84);
+}
+
+.profile-vaccine-input input {
+  width: 100%;
+  border: 1px solid rgba(124, 138, 165, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.84);
+  padding: 14px 16px;
+  color: #183153;
+  outline: none;
+}
+
+.profile-vaccine-input input:focus {
+  border-color: rgba(59, 117, 208, 0.42);
+  box-shadow: 0 0 0 4px rgba(89, 149, 241, 0.14);
+}
+
 .profile-family-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -867,8 +987,14 @@ button {
   }
 
   .profile-placeholder-grid,
-  .profile-family-grid {
+  .profile-family-grid,
+  .profile-vaccine-meta {
     grid-template-columns: 1fr;
+  }
+
+  .profile-vaccine-head {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

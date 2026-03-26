@@ -994,7 +994,8 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           fatherId: normalizedFather,
           motherId: normalizedMother,
           birthDate: draft.birthDate,
-          isBreedingApproved: true
+          isBreedingApproved: true,
+          vaccinations: []
         }
       ]);
       setPendingFocusAnimalId(animalId);

@@ -1,5 +1,10 @@
 export type AnimalGender = "male" | "female";
 
+export type AnimalVaccination = {
+  vaccineId: string;
+  lastDate: string;
+};
+
 export type Animal = {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export type Animal = {
   motherId: string | null;
   birthDate: string;
   isBreedingApproved: boolean;
+  vaccinations: AnimalVaccination[];
 };
 
 type AnimalSnapshot = {
@@ -103,8 +109,9 @@ function normalizeAnimal(raw: unknown): Animal | null {
   const birthDate = normalizeRequiredString(raw.birthDate);
   const gender = normalizeGender(raw.gender);
   const isBreedingApproved = normalizeBoolean(raw.isBreedingApproved);
+  const vaccinations = normalizeVaccinations(raw.vaccinations);
 
-  if (!id || !name || !birthDate || !gender || isBreedingApproved === null) {
+  if (!id || !name || !birthDate || !gender || isBreedingApproved === null || vaccinations === null) {
     return null;
   }
 
@@ -115,7 +122,8 @@ function normalizeAnimal(raw: unknown): Animal | null {
     fatherId: normalizeOptionalString(raw.fatherId),
     motherId: normalizeOptionalString(raw.motherId),
     birthDate,
-    isBreedingApproved
+    isBreedingApproved,
+    vaccinations
   };
 }
 
@@ -146,6 +154,32 @@ function normalizeOptionalString(value: unknown): string | null {
 
 function normalizeBoolean(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
+}
+
+function normalizeVaccinations(value: unknown): AnimalVaccination[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const vaccinations: AnimalVaccination[] = [];
+  const seenIds = new Set<string>();
+
+  value.forEach((item) => {
+    if (!isRecord(item)) {
+      return;
+    }
+
+    const vaccineId = normalizeRequiredString(item.vaccineId);
+    const lastDate = normalizeRequiredString(item.lastDate);
+    if (!vaccineId || !lastDate || seenIds.has(vaccineId)) {
+      return;
+    }
+
+    seenIds.add(vaccineId);
+    vaccinations.push({ vaccineId, lastDate });
+  });
+
+  return vaccinations;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

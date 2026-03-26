@@ -60,6 +60,19 @@ export type Messages = {
   profileGeneralDescription: string;
   profileKiddingDescription: string;
   profileVaccinesDescription: string;
+  profileVaccinesIntroTitle: string;
+  profileVaccinesIntroDescription: string;
+  profileVaccinesAutoSaveHint: string;
+  profileVaccinesLastDate: string;
+  profileVaccinesNextDate: string;
+  profileVaccinesInterval: string;
+  profileVaccinesTiming: string;
+  profileVaccinesCoreBadge: string;
+  profileVaccinesRiskBadge: string;
+  profileVaccinesStatusMissing: string;
+  profileVaccinesStatusCurrent: string;
+  profileVaccinesStatusDueSoon: string;
+  profileVaccinesStatusOverdue: string;
   profileKiddingEmptyTitle: string;
   profileKiddingEmptyDescription: string;
   profileVaccinesEmptyTitle: string;
@@ -176,7 +189,21 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileNoChildren: "Потомков пока нет",
     profileGeneralDescription: "Базовые данные животного.",
     profileKiddingDescription: "Заготовка под журнал окотов, беременностей и заметок по потомству.",
-    profileVaccinesDescription: "Заготовка под журнал профилактики и календарь прививок.",
+    profileVaccinesDescription: "Базовый календарь прививок для овец и коз с автоматическим расчётом следующей даты.",
+    profileVaccinesIntroTitle: "Распространённые прививки для малого рогатого скота",
+    profileVaccinesIntroDescription:
+      "Это базовый список распространённых вакцин. Фактическая схема зависит от препарата, региона, эпизоотической ситуации и рекомендаций ветеринара.",
+    profileVaccinesAutoSaveHint: "Следующая дата считается автоматически от последней введённой прививки и сохраняется сразу.",
+    profileVaccinesLastDate: "Последняя прививка",
+    profileVaccinesNextDate: "Следующая дата",
+    profileVaccinesInterval: "Интервал",
+    profileVaccinesTiming: "Когда обычно делают",
+    profileVaccinesCoreBadge: "Базовая",
+    profileVaccinesRiskBadge: "По показаниям",
+    profileVaccinesStatusMissing: "Нет даты",
+    profileVaccinesStatusCurrent: "В графике",
+    profileVaccinesStatusDueSoon: "Скоро",
+    profileVaccinesStatusOverdue: "Просрочена",
     profileKiddingEmptyTitle: "Журнал окотов появится здесь",
     profileKiddingEmptyDescription: "Пока можно хранить заметки по беременности, окоту и количеству козлят.",
     profileVaccinesEmptyTitle: "Журнал прививок появится здесь",
@@ -263,7 +290,21 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileNoChildren: "No offspring yet",
     profileGeneralDescription: "Core animal data.",
     profileKiddingDescription: "Starter area for a future kidding log, pregnancy notes, and litter details.",
-    profileVaccinesDescription: "Starter area for preventive care records and vaccine reminders.",
+    profileVaccinesDescription: "Baseline sheep and goat vaccine planner with automatic next-date calculation.",
+    profileVaccinesIntroTitle: "Common small-ruminant vaccines",
+    profileVaccinesIntroDescription:
+      "This is a baseline list of common vaccines. The actual schedule depends on product label, region, disease pressure, and veterinarian guidance.",
+    profileVaccinesAutoSaveHint: "The next date is calculated automatically from the last recorded dose and saved immediately.",
+    profileVaccinesLastDate: "Last vaccination",
+    profileVaccinesNextDate: "Next date",
+    profileVaccinesInterval: "Interval",
+    profileVaccinesTiming: "Typical timing",
+    profileVaccinesCoreBadge: "Core",
+    profileVaccinesRiskBadge: "Risk-based",
+    profileVaccinesStatusMissing: "No date",
+    profileVaccinesStatusCurrent: "On track",
+    profileVaccinesStatusDueSoon: "Soon",
+    profileVaccinesStatusOverdue: "Overdue",
     profileKiddingEmptyTitle: "The kidding log will live here",
     profileKiddingEmptyDescription: "For now this can hold pregnancy notes, kidding outcomes, and kid counts.",
     profileVaccinesEmptyTitle: "The vaccination log will live here",
