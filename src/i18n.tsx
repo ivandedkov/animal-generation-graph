@@ -64,6 +64,7 @@ export type Messages = {
   profileVaccinesIntroDescription: string;
   profileVaccinesAutoSaveHint: string;
   profileVaccinesLastDate: string;
+  profileVaccinesChooseDate: string;
   profileVaccinesNextDate: string;
   profileVaccinesInterval: string;
   profileVaccinesTiming: string;
@@ -193,6 +194,7 @@ const messagesByLocale: Record<Locale, Messages> = {
       "Это базовый список распространённых вакцин. Фактическая схема зависит от препарата, региона, эпизоотической ситуации и рекомендаций ветеринара.",
     profileVaccinesAutoSaveHint: "Следующая дата считается автоматически от последней введённой прививки и сохраняется сразу.",
     profileVaccinesLastDate: "Последняя прививка",
+    profileVaccinesChooseDate: "Выбирите дату",
     profileVaccinesNextDate: "Следующая дата",
     profileVaccinesInterval: "Интервал",
     profileVaccinesTiming: "Когда обычно делают",
@@ -292,6 +294,7 @@ const messagesByLocale: Record<Locale, Messages> = {
       "This is a baseline list of common vaccines. The actual schedule depends on product label, region, disease pressure, and veterinarian guidance.",
     profileVaccinesAutoSaveHint: "The next date is calculated automatically from the last recorded dose and saved immediately.",
     profileVaccinesLastDate: "Last vaccination",
+    profileVaccinesChooseDate: "Pick a date",
     profileVaccinesNextDate: "Next date",
     profileVaccinesInterval: "Interval",
     profileVaccinesTiming: "Typical timing",

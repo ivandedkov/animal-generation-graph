@@ -267,6 +267,19 @@ function getVaccinationStatus(lastDate: string, nextDate: string, today: string)
   return "current";
 }
 
+function getVaccinationStatusClass(status: VaccinationStatus) {
+  switch (status) {
+    case "overdue":
+      return "profile-vaccine-tone-overdue";
+    case "due_soon":
+      return "profile-vaccine-tone-soon";
+    case "current":
+      return "profile-vaccine-tone-current";
+    default:
+      return "profile-vaccine-tone-missing";
+  }
+}
+
 function todayValue() {
   const now = new Date();
   const year = now.getFullYear();
@@ -814,15 +827,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                         <div className="profile-vaccine-title-row">
                           <h3>{vaccination.title}</h3>
                           <span
-                            className={
-                              vaccination.status === "overdue"
-                                ? "profile-vaccine-status profile-vaccine-status-overdue"
-                                : vaccination.status === "due_soon"
-                                  ? "profile-vaccine-status profile-vaccine-status-soon"
-                                  : vaccination.status === "current"
-                                    ? "profile-vaccine-status profile-vaccine-status-current"
-                                    : "profile-vaccine-status profile-vaccine-status-missing"
-                            }
+                            className={`profile-vaccine-status ${getVaccinationStatusClass(vaccination.status)}`}
                           >
                             {vaccination.status === "overdue"
                               ? messages.profileVaccinesStatusOverdue
@@ -864,14 +869,34 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                       </article>
                     </div>
 
-                    <label className="profile-vaccine-input">
-                      {messages.profileVaccinesLastDate}
-                      <input
-                        type="date"
-                        value={vaccination.lastDate}
-                        onChange={(event) => updateVaccinationDate(vaccination.id, event.target.value)}
-                        onClick={openDateInputPicker}
-                      />
+                    <label
+                      className={`profile-vaccine-input ${
+                        vaccination.lastDate
+                          ? `${getVaccinationStatusClass(vaccination.status)} profile-vaccine-input-filled`
+                          : "profile-vaccine-input-empty"
+                      }`}
+                    >
+                      <span className="profile-vaccine-input-label">{messages.profileVaccinesLastDate}</span>
+                      <span className="profile-vaccine-input-control">
+                        <span
+                          className={
+                            vaccination.lastDate
+                              ? "profile-vaccine-input-value profile-vaccine-input-value-filled"
+                              : "profile-vaccine-input-value profile-vaccine-input-value-placeholder"
+                          }
+                          aria-hidden="true"
+                        >
+                          {vaccination.lastDate ? formatDate(vaccination.lastDate) : messages.profileVaccinesChooseDate}
+                        </span>
+                        <span className="profile-vaccine-input-icon" aria-hidden="true" />
+                        <input
+                          type="date"
+                          value={vaccination.lastDate}
+                          onChange={(event) => updateVaccinationDate(vaccination.id, event.target.value)}
+                          onClick={openDateInputPicker}
+                          aria-label={messages.profileVaccinesLastDate}
+                        />
+                      </span>
                     </label>
                   </article>
                 ))}
