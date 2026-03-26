@@ -7,21 +7,22 @@ export type Animal = {
   fatherId: string | null;
   motherId: string | null;
   birthDate: string;
+  isBreedingApproved: boolean;
 };
 
-type AnimalSnapshotV1 = {
-  version: 1;
+type AnimalSnapshot = {
+  version: 2;
   animals: Animal[];
 };
 
 const STORAGE_KEY = "animal-generation-canvas";
-const CURRENT_SNAPSHOT_VERSION = 1;
+const CURRENT_SNAPSHOT_VERSION = 2;
 
 export function createAnimalId() {
   return `animal-${crypto.randomUUID()}`;
 }
 
-export function createAnimalSnapshot(animals: Animal[]): AnimalSnapshotV1 {
+export function createAnimalSnapshot(animals: Animal[]): AnimalSnapshot {
   return {
     version: CURRENT_SNAPSHOT_VERSION,
     animals: animals.map((animal) => ({ ...animal }))
@@ -51,18 +52,12 @@ export async function saveAnimals(animals: Animal[], storage: Storage = window.l
 }
 
 function extractSnapshotPayload(raw: unknown): unknown {
-  if (Array.isArray(raw)) {
-    return raw;
-  }
-
   if (!isRecord(raw)) {
     return [];
   }
 
-  if (raw.version === CURRENT_SNAPSHOT_VERSION) {
-    if (Array.isArray(raw.animals)) {
-      return raw.animals;
-    }
+  if (raw.version === CURRENT_SNAPSHOT_VERSION && Array.isArray(raw.animals)) {
+    return raw.animals;
   }
 
   return [];
@@ -107,8 +102,9 @@ function normalizeAnimal(raw: unknown): Animal | null {
   const name = normalizeRequiredString(raw.name);
   const birthDate = normalizeRequiredString(raw.birthDate);
   const gender = normalizeGender(raw.gender);
+  const isBreedingApproved = normalizeBoolean(raw.isBreedingApproved);
 
-  if (!id || !name || !birthDate || !gender) {
+  if (!id || !name || !birthDate || !gender || isBreedingApproved === null) {
     return null;
   }
 
@@ -118,7 +114,8 @@ function normalizeAnimal(raw: unknown): Animal | null {
     gender,
     fatherId: normalizeOptionalString(raw.fatherId),
     motherId: normalizeOptionalString(raw.motherId),
-    birthDate
+    birthDate,
+    isBreedingApproved
   };
 }
 
@@ -145,6 +142,10 @@ function normalizeRequiredString(value: unknown): string | null {
 
 function normalizeOptionalString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function normalizeBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

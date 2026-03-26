@@ -56,6 +56,21 @@ button {
   touch-action: none;
 }
 
+.canvas-tooltip {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  transform: translateY(-100%);
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(33, 43, 60, 0.94);
+  color: #f8fbff;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 14px 28px rgba(25, 34, 49, 0.22);
+}
+
 .overlay-panel,
 .legend-panel,
 .animal-browser-panel {
@@ -650,6 +665,16 @@ button {
 .profile-badge-female {
   background: rgba(255, 157, 190, 0.22);
   color: #b03c73;
+}
+
+.profile-badge-breeding-approved {
+  background: rgba(131, 181, 104, 0.18);
+  color: #456b2f;
+}
+
+.profile-badge-breeding-restricted {
+  background: rgba(130, 145, 167, 0.18);
+  color: #566273;
 }
 
 .profile-hero-date {
