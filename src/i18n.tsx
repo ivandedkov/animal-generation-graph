@@ -60,29 +60,21 @@ export type Messages = {
   profileGeneralDescription: string;
   profileKiddingDescription: string;
   profileKiddingStatusLabel: string;
-  profileKiddingStatusHint: string;
   profileKiddingStatusOpen: string;
   profileKiddingStatusExposed: string;
   profileKiddingStatusConfirmed: string;
   profileKiddingDateLabel: string;
-  profileKiddingDateHint: string;
   profileKiddingDateRequired: string;
   profileKiddingFutureDateError: string;
-  profileKiddingMateTitle: string;
-  profileKiddingMateLabel: string;
-  profileKiddingMatePlaceholder: string;
-  profileKiddingMateHint: string;
   profileKiddingExpectedDateTitle: string;
   profileKiddingCountdownTitle: string;
   profileKiddingCurrentDayTitle: string;
   profileKiddingNoActiveTitle: string;
   profileKiddingNoActiveDescription: string;
-  profileKiddingFixedTermHint: string;
   profileKiddingCountdownRemaining: (value: number) => string;
   profileKiddingCountdownToday: string;
   profileKiddingCountdownOverdue: (value: number) => string;
   profileKiddingPregnancyDay: (value: number) => string;
-  profileKiddingNoMate: string;
   profileKiddingMarkCompleted: string;
   profileVaccinesDescription: string;
   profileVaccinesIntroTitle: string;
@@ -212,31 +204,23 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileMotherUnknown: "Мать не указана",
     profileNoChildren: "Потомков пока нет",
     profileGeneralDescription: "Базовые данные животного.",
-    profileKiddingDescription: "Отмечайте покрытие и смотрите, когда ориентировочно ждать окот. Расчёт идет автоматически по сроку 148 дней.",
+    profileKiddingDescription: "Отмечайте покрытие и смотрите, когда ориентировочно ждать окот.",
     profileKiddingStatusLabel: "Репродуктивный статус",
-    profileKiddingStatusHint: "Статус помогает быстро понять: животное пустое, после случки или беременность уже подтверждена.",
     profileKiddingStatusOpen: "Не покрыта",
     profileKiddingStatusExposed: "После случки",
     profileKiddingStatusConfirmed: "Беременность подтверждена",
     profileKiddingDateLabel: "Дата случки / осеменения",
-    profileKiddingDateHint: "Именно от этой даты приложение считает ориентировочный день окота.",
     profileKiddingDateRequired: "Укажите дату случки или осеменения.",
     profileKiddingFutureDateError: "Дата случки не может быть позже сегодняшнего дня.",
-    profileKiddingMateTitle: "Производитель",
-    profileKiddingMateLabel: "Предполагаемый отец",
-    profileKiddingMatePlaceholder: "Не выбран",
-    profileKiddingMateHint: "Поле необязательное, но помогает сразу видеть, от кого ожидается потомство.",
     profileKiddingExpectedDateTitle: "Ориентировочный окот",
     profileKiddingCountdownTitle: "До окота",
     profileKiddingCurrentDayTitle: "Текущий день",
     profileKiddingNoActiveTitle: "Активной беременности нет",
     profileKiddingNoActiveDescription: "Когда самка будет покрыта, достаточно выбрать статус и указать дату. Дальше срок посчитается сам.",
-    profileKiddingFixedTermHint: "Для всех расчётов используется единый ориентир: 148 дней беременности.",
     profileKiddingCountdownRemaining: (value) => `Осталось ${value} дн.`,
     profileKiddingCountdownToday: "Ожидается сегодня",
     profileKiddingCountdownOverdue: (value) => `Срок прошёл ${value} дн. назад`,
     profileKiddingPregnancyDay: (value) => `${value}-й день`,
-    profileKiddingNoMate: "Не указан",
     profileKiddingMarkCompleted: "Отметить окот",
     profileVaccinesDescription: "Базовый календарь прививок для овец и коз с автоматическим расчётом следующей даты.",
     profileVaccinesIntroTitle: "Распространённые прививки для малого рогатого скота",
@@ -337,31 +321,23 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileMotherUnknown: "Mother not specified",
     profileNoChildren: "No offspring yet",
     profileGeneralDescription: "Core animal data.",
-    profileKiddingDescription: "Track breeding status and see when kidding is roughly due. The estimate is calculated automatically from a fixed 148-day term.",
+    profileKiddingDescription: "Track breeding status and see when kidding is roughly due.",
     profileKiddingStatusLabel: "Breeding status",
-    profileKiddingStatusHint: "Use the status to mark whether the doe is open, recently bred, or confirmed pregnant.",
     profileKiddingStatusOpen: "Open",
     profileKiddingStatusExposed: "Bred",
     profileKiddingStatusConfirmed: "Pregnancy confirmed",
     profileKiddingDateLabel: "Breeding / insemination date",
-    profileKiddingDateHint: "The expected kidding date is calculated from this date.",
     profileKiddingDateRequired: "Enter the breeding or insemination date.",
     profileKiddingFutureDateError: "Breeding date cannot be later than today.",
-    profileKiddingMateTitle: "Sire",
-    profileKiddingMateLabel: "Expected sire",
-    profileKiddingMatePlaceholder: "Not selected",
-    profileKiddingMateHint: "Optional, but useful when you want the planned father visible right in the profile.",
     profileKiddingExpectedDateTitle: "Expected kidding",
     profileKiddingCountdownTitle: "Time remaining",
     profileKiddingCurrentDayTitle: "Current day",
     profileKiddingNoActiveTitle: "No active pregnancy",
     profileKiddingNoActiveDescription: "Once the doe is bred, set the status and breeding date. The expected kidding date will be calculated automatically.",
-    profileKiddingFixedTermHint: "All estimates use a shared 148-day gestation reference.",
     profileKiddingCountdownRemaining: (value) => `${value} days left`,
     profileKiddingCountdownToday: "Expected today",
     profileKiddingCountdownOverdue: (value) => `${value} days overdue`,
     profileKiddingPregnancyDay: (value) => `Day ${value}`,
-    profileKiddingNoMate: "Not specified",
     profileKiddingMarkCompleted: "Mark kidding",
     profileVaccinesDescription: "Baseline sheep and goat vaccine planner with automatic next-date calculation.",
     profileVaccinesIntroTitle: "Common small-ruminant vaccines",

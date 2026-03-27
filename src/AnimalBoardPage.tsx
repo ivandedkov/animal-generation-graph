@@ -998,8 +998,7 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           isBreedingApproved: true,
           pregnancy: {
             status: "open",
-            breedingDate: null,
-            mateId: null
+            breedingDate: null
           },
           vaccinations: []
         }

@@ -9,7 +9,6 @@ export type AnimalVaccination = {
 export type AnimalPregnancy = {
   status: AnimalPregnancyStatus;
   breedingDate: string | null;
-  mateId: string | null;
 };
 
 export type Animal = {
@@ -152,21 +151,17 @@ function resolveParentId(parentId: string | null, byId: Map<string, Animal>, exp
 }
 
 function resolvePregnancy(pregnancy: AnimalPregnancy, byId: Map<string, Animal>) {
+  void byId;
+
   if (pregnancy.status === "open" || !pregnancy.breedingDate) {
     return {
       ...pregnancy,
       status: "open" as const,
-      breedingDate: null,
-      mateId: null
+      breedingDate: null
     };
   }
 
-  const mateId = resolveParentId(pregnancy.mateId, byId, "male");
-
-  return {
-    ...pregnancy,
-    mateId
-  };
+  return pregnancy;
 }
 
 function normalizeGender(value: unknown): AnimalGender | null {
@@ -196,7 +191,6 @@ function normalizePregnancy(value: unknown): AnimalPregnancy | null {
 
   const status = normalizePregnancyStatus(value.status);
   const breedingDate = normalizeOptionalString(value.breedingDate);
-  const mateId = normalizeOptionalString(value.mateId);
 
   if (!status) {
     return null;
@@ -205,15 +199,13 @@ function normalizePregnancy(value: unknown): AnimalPregnancy | null {
   if (status === "open" || !breedingDate) {
     return {
       status: "open",
-      breedingDate: null,
-      mateId: null
+      breedingDate: null
     };
   }
 
   return {
     status,
-    breedingDate,
-    mateId
+    breedingDate
   };
 }
 

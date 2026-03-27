@@ -17,7 +17,6 @@ type AnimalDraft = {
 type PregnancyDraft = {
   status: AnimalPregnancyStatus;
   breedingDate: string;
-  mateId: string;
 };
 
 type AnimalProfilePageProps = {
@@ -62,8 +61,7 @@ function createVaccinationDraft(animal: Animal) {
 function createPregnancyDraft(animal: Animal): PregnancyDraft {
   return {
     status: animal.pregnancy.status,
-    breedingDate: animal.pregnancy.breedingDate ?? "",
-    mateId: animal.pregnancy.mateId ?? ""
+    breedingDate: animal.pregnancy.breedingDate ?? ""
   };
 }
 
@@ -506,10 +504,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     () => (animal ? buildParentOptions(animals, "female", animal.id, descendantIds, draft?.motherId ?? "") : []),
     [animal, animals, descendantIds, draft?.motherId]
   );
-  const pregnancyMateOptions = useMemo(
-    () => (animal ? buildParentOptions(animals, "male", animal.id, descendantIds, pregnancyDraft?.mateId ?? "") : []),
-    [animal, animals, descendantIds, pregnancyDraft?.mateId]
-  );
   const children = useMemo(
     () =>
       animal
@@ -521,13 +515,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     () => (draft ? getRelationWarning(animals, draft.fatherId, draft.motherId, messages) : null),
     [animals, draft, messages]
   );
-  const relatedPregnancyWarning = useMemo(() => {
-    if (!animal || !pregnancyDraft || !pregnancyDraft.mateId || pregnancyDraft.status === "open") {
-      return null;
-    }
-
-    return getRelationWarning(animals, pregnancyDraft.mateId, animal.id, messages);
-  }, [animal, animals, pregnancyDraft, messages]);
   const vaccinationDefinitions = useMemo(
     () => (animal ? getVaccinationDefinitions(locale, animal.gender) : []),
     [animal, locale]
@@ -596,8 +583,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
       ? Math.max(daysBetween(pregnancyDraft.breedingDate, today) + 1, 1)
       : null;
   const daysUntilKidding = expectedKiddingDate ? daysBetween(today, expectedKiddingDate) : null;
-  const pregnancyMateName =
-    pregnancyDraft.mateId ? animals.find((entry) => entry.id === pregnancyDraft.mateId)?.name ?? "" : "";
   const pregnancyStatusLabel = getPregnancyStatusLabel(pregnancyDraft.status, messages);
   const pregnancyCountdownLabel =
     daysUntilKidding === null
@@ -659,13 +644,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
       pregnancyDraft.status === "open"
         ? {
             status: "open" as const,
-            breedingDate: null,
-            mateId: null
+            breedingDate: null
           }
         : {
             status: pregnancyDraft.status,
-            breedingDate: pregnancyDraft.breedingDate,
-            mateId: pregnancyDraft.mateId || null
+            breedingDate: pregnancyDraft.breedingDate
           };
 
     setAnimals((current) =>
@@ -680,8 +663,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     );
     setPregnancyDraft({
       status: nextPregnancy.status,
-      breedingDate: nextPregnancy.breedingDate ?? "",
-      mateId: nextPregnancy.mateId ?? ""
+      breedingDate: nextPregnancy.breedingDate ?? ""
     });
     setPregnancyError("");
   };
@@ -694,8 +676,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
               ...entry,
               pregnancy: {
                 status: "open",
-                breedingDate: null,
-                mateId: null
+                breedingDate: null
               }
             }
           : entry
@@ -706,8 +687,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
         ? {
             ...current,
             status: "open",
-            breedingDate: "",
-            mateId: ""
+            breedingDate: ""
           }
         : current
     );
@@ -959,9 +939,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                   >
                     <span>{messages.profileKiddingStatusLabel}</span>
                     <strong>{pregnancyStatusLabel}</strong>
-                    <p>
-                      {hasActivePregnancy ? messages.profileKiddingFixedTermHint : messages.profileKiddingNoActiveDescription}
-                    </p>
                   </article>
 
                   <div className="profile-kidding-stats">
@@ -976,14 +953,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                     <article className="profile-stat-card">
                       <span>{messages.profileKiddingCurrentDayTitle}</span>
                       <strong>{pregnancyDayLabel}</strong>
-                    </article>
-                    <article className="profile-stat-card">
-                      <span>{messages.profileKiddingMateTitle}</span>
-                      <strong>{pregnancyMateName || messages.profileKiddingNoMate}</strong>
-                    </article>
-                    <article className="profile-stat-card">
-                      <span>{messages.profileChildrenTitle}</span>
-                      <strong>{children.length === 0 ? messages.profileNoChildren : `${children.length}`}</strong>
                     </article>
                   </div>
                 </div>
@@ -1003,7 +972,9 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                     </select>
                   </label>
 
-                  <div className="field-hint">{messages.profileKiddingStatusHint}</div>
+                  {pregnancyDraft.status === "open" ? (
+                    <div className="field-hint">{messages.profileKiddingNoActiveDescription}</div>
+                  ) : null}
 
                   {pregnancyDraft.status !== "open" ? (
                     <>
@@ -1017,50 +988,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                           required
                         />
                       </label>
-
-                      <div className="field-hint">{messages.profileKiddingDateHint}</div>
-
-                      <label>
-                        {messages.profileKiddingMateLabel}
-                        <select
-                          value={pregnancyDraft.mateId}
-                          onChange={(event) => updatePregnancyDraft("mateId", event.target.value)}
-                        >
-                          <option value="">{messages.profileKiddingMatePlaceholder}</option>
-                          {pregnancyMateOptions.map((entry) => (
-                            <option key={entry.id} value={entry.id}>
-                              {entry.isBreedingApproved || entry.id !== pregnancyDraft.mateId
-                                ? entry.name
-                                : `${entry.name} (${messages.breedingRestricted})`}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <div className="field-hint">{messages.profileKiddingMateHint}</div>
                     </>
-                  ) : (
-                    <div className="profile-kidding-note">{messages.profileKiddingNoActiveDescription}</div>
-                  )}
-
-                  <div className="profile-kidding-note">{messages.profileKiddingFixedTermHint}</div>
-
-                  {relatedPregnancyWarning ? (
-                    <div
-                      className={
-                        relatedPregnancyWarning.level === "high"
-                          ? "form-warning form-warning-high"
-                          : "form-warning form-warning-medium"
-                      }
-                    >
-                      <strong>
-                        {relatedPregnancyWarning.level === "high"
-                          ? messages.relatedParentsHighRiskTitle
-                          : messages.relatedParentsMediumRiskTitle}
-                        :
-                      </strong>{" "}
-                      {relatedPregnancyWarning.text}
-                    </div>
                   ) : null}
 
                   {pregnancyError ? <div className="form-error">{pregnancyError}</div> : null}
