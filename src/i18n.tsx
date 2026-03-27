@@ -34,11 +34,6 @@ export type Messages = {
   mother: string;
   motherPlaceholder: string;
   birthDate: string;
-  breedingStatus: string;
-  breedingApproved: string;
-  breedingRestricted: string;
-  breedingStatusHint: string;
-  breedingSelectableHint: string;
   delete: string;
   confirmDeleteTitle: string;
   confirmDeleteDescription: string;
@@ -145,7 +140,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     help: "Подсказки",
     helpTitle: "Как пользоваться полем",
     helpItems: [
-      "Левый клик по животному с допуском к разведению выбирает родителя по полу.",
+      "Левый клик по животному выбирает родителя по полу.",
       "Кнопка с карандашом в правом нижнем углу ячейки открывает профиль животного.",
       "Клик по пустому месту сбрасывает текущий выбор родителей.",
       "Пустое место можно перетаскивать, чтобы двигать поле.",
@@ -169,11 +164,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     mother: "Мать",
     motherPlaceholder: "Не выбрана",
     birthDate: "Дата рождения",
-    breedingStatus: "Племенной статус",
-    breedingApproved: "Допущено к разведению",
-    breedingRestricted: "Вне разведения",
-    breedingStatusHint: "Животные вне разведения на канвасе приглушены и не выбираются кликом в качестве родителя.",
-    breedingSelectableHint: "В списках родителей доступны только животные с допуском к разведению.",
     delete: "Удалить",
     confirmDeleteTitle: "Удалить животное?",
     confirmDeleteDescription: "Узел будет удален, а у потомков очистятся связи с этим родителем.",
@@ -250,7 +240,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     help: "Help",
     helpTitle: "How to use the board",
     helpItems: [
-      "Left-click an animal approved for breeding to choose a parent based on its gender.",
+      "Left-click an animal to choose a parent based on its gender.",
       "Use the pencil button in the card's bottom-right corner to open the animal profile.",
       "Click empty space to clear the current parent selection.",
       "Drag empty space to move around the board.",
@@ -274,11 +264,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     mother: "Mother",
     motherPlaceholder: "Not selected",
     birthDate: "Birth date",
-    breedingStatus: "Breeding status",
-    breedingApproved: "Approved for breeding",
-    breedingRestricted: "Out of breeding",
-    breedingStatusHint: "Animals that are out of breeding appear muted on the board and cannot be picked as parents by click.",
-    breedingSelectableHint: "Only animals approved for breeding are available in the parent lists.",
     delete: "Delete",
     confirmDeleteTitle: "Delete animal?",
     confirmDeleteDescription: "The node will be removed and descendants will lose the link to this parent.",

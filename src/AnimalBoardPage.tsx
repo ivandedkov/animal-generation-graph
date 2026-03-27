@@ -2,7 +2,6 @@ import { Dispatch, FormEvent, PointerEvent, SetStateAction, WheelEvent, useEffec
 import { useNavigate } from "react-router-dom";
 import { Animal, AnimalGender, createAnimalId } from "./animal-data";
 import editPencilUrl from "./assets/icons/edit-pencil.svg";
-import breedingHeartUrl from "./assets/icons/breeding-heart.svg";
 import { openDateInputPicker } from "./date-input";
 import { localeOptions, useI18n } from "./i18n";
 
@@ -35,12 +34,7 @@ type SelectedParents = {
 
 type HoveredTarget = {
   animalId: string | null;
-  area: "node" | "gear" | "status" | "disabled" | null;
-};
-
-type HoverPoint = {
-  x: number;
-  y: number;
+  area: "node" | "gear" | null;
 };
 
 type CloseRelationType =
@@ -66,7 +60,6 @@ const ZOOM_SENSITIVITY = 0.01;
 const MAX_NAME_LENGTH = 20;
 const PAN_START_THRESHOLD = 4;
 const GEAR_BUTTON_RADIUS = 12;
-const STATUS_ICON_RADIUS = 10;
 const DEFAULT_PAN = { x: 180, y: 0 };
 const DEFAULT_ZOOM = 1;
 const EMPTY_PARENT_SELECTION: SelectedParents = { fatherId: null, motherId: null };
@@ -127,16 +120,9 @@ function buildParentOptions(
   animals: Animal[],
   gender: AnimalGender,
   editAnimalId: string | null,
-  descendantIds: Set<string>,
-  selectedId: string
+  descendantIds: Set<string>
 ) {
-  return animals.filter(
-    (animal) =>
-      animal.gender === gender &&
-      animal.id !== editAnimalId &&
-      !descendantIds.has(animal.id) &&
-      (animal.isBreedingApproved || animal.id === selectedId)
-  );
+  return animals.filter((animal) => animal.gender === gender && animal.id !== editAnimalId && !descendantIds.has(animal.id));
 }
 
 function normalizeSearchValue(value: string, locale: string) {
@@ -493,7 +479,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
   const [formError, setFormError] = useState("");
   const [selectedParents, setSelectedParents] = useState<SelectedParents>(EMPTY_PARENT_SELECTION);
   const [hoveredTarget, setHoveredTarget] = useState<HoveredTarget>(EMPTY_HOVERED_TARGET);
-  const [hoverPoint, setHoverPoint] = useState<HoverPoint | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [isAnimalListOpen, setIsAnimalListOpen] = useState(false);
   const [animalSearch, setAnimalSearch] = useState("");
@@ -502,7 +487,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const [editButtonIcon, setEditButtonIcon] = useState<HTMLImageElement | null>(null);
-  const [breedingStatusIcon, setBreedingStatusIcon] = useState<HTMLImageElement | null>(null);
   const modalOpenKey = modal ? `${modal.mode}:${modal.mode === "edit" ? modal.animalId : "new"}` : null;
   const editAnimalId = modal?.mode === "edit" ? modal.animalId : null;
   const selectedAnimalIds = useMemo(
@@ -601,7 +585,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
     };
 
     loadIcon(editPencilUrl, setEditButtonIcon);
-    loadIcon(breedingHeartUrl, setBreedingStatusIcon);
 
     return () => {
       cancelled = true;
@@ -645,26 +628,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
   const layout = useMemo(() => buildLayout(animals), [animals]);
 
   useEffect(() => {
-    const maleIds = new Set(
-      animals.filter((animal) => animal.gender === "male" && animal.isBreedingApproved).map((animal) => animal.id)
-    );
-    const femaleIds = new Set(
-      animals.filter((animal) => animal.gender === "female" && animal.isBreedingApproved).map((animal) => animal.id)
-    );
-
-    setSelectedParents((current) => {
-      const fatherId = current.fatherId && maleIds.has(current.fatherId) ? current.fatherId : null;
-      const motherId = current.motherId && femaleIds.has(current.motherId) ? current.motherId : null;
-
-      if (fatherId === current.fatherId && motherId === current.motherId) {
-        return current;
-      }
-
-      return { fatherId, motherId };
-    });
-  }, [animals]);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -696,13 +659,12 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
       messages.generation,
       selectedAnimalIds,
       hoveredTarget,
-      editButtonIcon,
-      breedingStatusIcon
+      editButtonIcon
     );
-  }, [breedingStatusIcon, canvasSize, editButtonIcon, formatDate, hoveredTarget, layout, messages, pan, selectedAnimalIds, zoom]);
+  }, [canvasSize, editButtonIcon, formatDate, hoveredTarget, layout, messages, pan, selectedAnimalIds, zoom]);
 
-  const maleOptions = buildParentOptions(animals, "male", editAnimalId, descendantIds, modal?.draft.fatherId ?? "");
-  const femaleOptions = buildParentOptions(animals, "female", editAnimalId, descendantIds, modal?.draft.motherId ?? "");
+  const maleOptions = buildParentOptions(animals, "male", editAnimalId, descendantIds);
+  const femaleOptions = buildParentOptions(animals, "female", editAnimalId, descendantIds);
   const editAnimalHasChildren =
     modal?.mode === "edit" &&
     animals.some((animal) => animal.fatherId === modal.animalId || animal.motherId === modal.animalId);
@@ -764,7 +726,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
     setPan(DEFAULT_PAN);
     setZoom(DEFAULT_ZOOM);
     setHoveredTarget(EMPTY_HOVERED_TARGET);
-    setHoverPoint(null);
     setIsPanning(false);
   };
 
@@ -796,8 +757,7 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
       x: canvasSize.width / 2 - anchor.x - node.x * zoom,
       y: canvasSize.height / 2 - anchor.y - node.y * zoom
     });
-    setHoveredTarget({ animalId, area: node.animal.isBreedingApproved ? "node" : "disabled" });
-    setHoverPoint(null);
+    setHoveredTarget({ animalId, area: "node" });
     setIsPanning(false);
   };
 
@@ -828,10 +788,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
         return;
       }
 
-      if (!target.animal.isBreedingApproved) {
-        return;
-      }
-
       setSelectedParents((current) =>
         target.animal.gender === "male"
           ? { ...current, fatherId: target.animal.id }
@@ -850,19 +806,13 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
       moved: false
     };
     setHoveredTarget(EMPTY_HOVERED_TARGET);
-    setHoverPoint(null);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
     if (!panRef.current.active || panRef.current.pointerId !== event.pointerId) {
       const point = toCanvasPoint(event.clientX, event.clientY);
-      const rect = event.currentTarget.getBoundingClientRect();
       setHoveredTarget(resolveHoveredTarget(layout, point.x, point.y));
-      setHoverPoint({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-      });
       return;
     }
 
@@ -876,7 +826,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
     panRef.current.moved = true;
     setIsPanning(true);
     setHoveredTarget(EMPTY_HOVERED_TARGET);
-    setHoverPoint(null);
     setPan({
       x: panRef.current.originX + deltaX,
       y: panRef.current.originY + deltaY
@@ -901,11 +850,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
 
     const point = toCanvasPoint(event.clientX, event.clientY);
     setHoveredTarget(resolveHoveredTarget(layout, point.x, point.y));
-    const rect = event.currentTarget.getBoundingClientRect();
-    setHoverPoint({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
-    });
   };
 
   const updateDraft = <K extends keyof AnimalDraft>(key: K, value: AnimalDraft[K]) => {
@@ -995,7 +939,6 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           fatherId: normalizedFather,
           motherId: normalizedMother,
           birthDate: draft.birthDate,
-          isBreedingApproved: true,
           pregnancy: {
             status: "open",
             breedingDate: null
@@ -1050,13 +993,9 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           style={{
             cursor: isPanning
               ? "grabbing"
-              : hoveredTarget.area === "status"
-                ? "help"
-                : hoveredTarget.area === "disabled"
-                  ? "not-allowed"
-                  : hoveredTarget.area
-                    ? "pointer"
-                    : "default"
+              : hoveredTarget.area
+                ? "pointer"
+                : "default"
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -1064,22 +1003,9 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           onPointerCancel={stopPan}
           onPointerLeave={() => {
             setHoveredTarget(EMPTY_HOVERED_TARGET);
-            setHoverPoint(null);
           }}
           onWheel={onWheel}
         />
-
-        {hoveredTarget.area === "status" && hoverPoint ? (
-          <div
-            className="canvas-tooltip"
-            style={{
-              left: hoverPoint.x + 14,
-              top: hoverPoint.y - 12
-            }}
-          >
-            {messages.breedingRestricted}
-          </div>
-        ) : null}
 
         <div className="overlay-stack">
           <div className="overlay-panel">
@@ -1245,9 +1171,7 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
                   <option value="">{messages.fatherPlaceholder}</option>
                   {maleOptions.map((animal) => (
                     <option key={animal.id} value={animal.id}>
-                      {animal.isBreedingApproved || animal.id !== modal.draft.fatherId
-                        ? animal.name
-                        : `${animal.name} (${messages.breedingRestricted})`}
+                      {animal.name}
                     </option>
                   ))}
                 </select>
@@ -1262,15 +1186,11 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
                   <option value="">{messages.motherPlaceholder}</option>
                   {femaleOptions.map((animal) => (
                     <option key={animal.id} value={animal.id}>
-                      {animal.isBreedingApproved || animal.id !== modal.draft.motherId
-                        ? animal.name
-                        : `${animal.name} (${messages.breedingRestricted})`}
+                      {animal.name}
                     </option>
                   ))}
                 </select>
               </label>
-
-              <div className="field-hint">{messages.breedingSelectableHint}</div>
 
               <label>
                 {messages.birthDate}
@@ -1405,8 +1325,7 @@ function drawGraph(
   formatGeneration: (value: number) => string,
   selectedAnimalIds: Set<string>,
   hoveredTarget: HoveredTarget,
-  editButtonIcon: CanvasImageSource | null,
-  breedingStatusIcon: CanvasImageSource | null
+  editButtonIcon: CanvasImageSource | null
 ) {
   const anchor = getCanvasAnchor(width, height);
 
@@ -1426,8 +1345,6 @@ function drawGraph(
           return;
         }
 
-        const isMutedEdge = !node.animal.isBreedingApproved || !parentNode.animal.isBreedingApproved;
-
         const startX = parentNode.x + parentNode.width / 2;
         const startY = parentNode.y;
         const endX = node.x - node.width / 2;
@@ -1435,7 +1352,7 @@ function drawGraph(
         const controlOffset = Math.max((endX - startX) * 0.4, 40);
 
         context.beginPath();
-        context.strokeStyle = isMutedEdge ? "rgba(145, 154, 171, 0.24)" : "rgba(103, 113, 141, 0.45)";
+        context.strokeStyle = "rgba(103, 113, 141, 0.45)";
         context.moveTo(startX, startY);
         context.bezierCurveTo(startX + controlOffset, startY, endX - controlOffset, endY, endX, endY);
         context.stroke();
@@ -1446,45 +1363,32 @@ function drawGraph(
     const isMale = node.animal.gender === "male";
     const isSelected = selectedAnimalIds.has(node.animal.id);
     const isHoveredNode = hoveredTarget.animalId === node.animal.id && hoveredTarget.area === "node";
-    const isHoveredDisabled = hoveredTarget.animalId === node.animal.id && hoveredTarget.area === "disabled";
-    const isHoveredStatus = hoveredTarget.animalId === node.animal.id && hoveredTarget.area === "status";
     const isHoveredGear = hoveredTarget.animalId === node.animal.id && hoveredTarget.area === "gear";
-    const isBreedingApproved = node.animal.isBreedingApproved;
-    const fill = isBreedingApproved ? (isMale ? "#9ac8ff" : "#ffc0d7") : "#d9dee7";
-    const accent = isBreedingApproved ? (isMale ? "#3877d6" : "#d2578f") : "#7b8698";
+    const fill = isMale ? "#9ac8ff" : "#ffc0d7";
+    const accent = isMale ? "#3877d6" : "#d2578f";
 
     roundRectPath(context, node.x - node.width / 2, node.y - node.height / 2, node.width, node.height, 22);
-    context.fillStyle = isBreedingApproved
-      ? isSelected
-        ? isHoveredNode
-          ? "rgba(255, 234, 160, 0.98)"
-          : "rgba(255, 242, 191, 0.96)"
-        : isHoveredNode
-          ? "rgba(245, 249, 255, 0.98)"
-          : "rgba(255, 255, 255, 0.9)"
-      : isHoveredDisabled
-        ? "rgba(242, 245, 250, 0.96)"
-        : "rgba(245, 247, 251, 0.86)";
-    context.shadowColor = isBreedingApproved
+    context.fillStyle = isSelected
       ? isHoveredNode
-        ? "rgba(47, 61, 89, 0.2)"
-        : "rgba(47, 61, 89, 0.12)"
-      : "rgba(92, 104, 125, 0.06)";
-    context.shadowBlur = isBreedingApproved ? (isHoveredNode ? 28 : 22) : isHoveredDisabled ? 14 : 10;
-    context.shadowOffsetY = isBreedingApproved ? (isHoveredNode ? 14 : 10) : isHoveredDisabled ? 7 : 5;
+        ? "rgba(255, 234, 160, 0.98)"
+        : "rgba(255, 242, 191, 0.96)"
+      : isHoveredNode
+        ? "rgba(245, 249, 255, 0.98)"
+        : "rgba(255, 255, 255, 0.9)";
+    context.shadowColor = isHoveredNode
+      ? "rgba(47, 61, 89, 0.2)"
+      : "rgba(47, 61, 89, 0.12)";
+    context.shadowBlur = isHoveredNode ? 28 : 22;
+    context.shadowOffsetY = isHoveredNode ? 14 : 10;
     context.fill();
 
     context.shadowColor = "transparent";
     context.lineWidth = 1.5;
-    context.strokeStyle = isBreedingApproved
-      ? isSelected
-        ? "rgba(197, 161, 73, 0.5)"
-        : isHoveredNode
-          ? "rgba(79, 137, 223, 0.42)"
-          : "rgba(107, 122, 149, 0.18)"
-      : isHoveredDisabled
-        ? "rgba(121, 134, 155, 0.34)"
-        : "rgba(121, 134, 155, 0.2)";
+    context.strokeStyle = isSelected
+      ? "rgba(197, 161, 73, 0.5)"
+      : isHoveredNode
+        ? "rgba(79, 137, 223, 0.42)"
+        : "rgba(107, 122, 149, 0.18)";
     context.stroke();
 
     context.beginPath();
@@ -1492,7 +1396,7 @@ function drawGraph(
     context.fillStyle = fill;
     context.fill();
 
-    context.fillStyle = isBreedingApproved ? "#183153" : "rgba(24, 49, 83, 0.64)";
+    context.fillStyle = "#183153";
     context.font = "600 18px ui-sans-serif, system-ui, sans-serif";
     context.textBaseline = "middle";
     drawTextWithEllipsis(
@@ -1507,45 +1411,12 @@ function drawGraph(
     context.font = "500 12px ui-sans-serif, system-ui, sans-serif";
     context.fillText(formatGeneration(node.generation + 1), node.x - node.width / 2 + 40, node.y + 8);
 
-    context.fillStyle = isBreedingApproved ? "rgba(24, 49, 83, 0.6)" : "rgba(24, 49, 83, 0.48)";
+    context.fillStyle = "rgba(24, 49, 83, 0.6)";
     context.font = "500 11px ui-sans-serif, system-ui, sans-serif";
     context.fillText(formatDate(node.animal.birthDate), node.x - node.width / 2 + 40, node.y + 24);
 
-    if (!isBreedingApproved) {
-      drawBreedingStatusIcon(context, node, isHoveredStatus, breedingStatusIcon);
-    }
-
     drawGearButton(context, node, isHoveredGear, editButtonIcon);
   });
-
-  context.restore();
-}
-
-function drawBreedingStatusIcon(
-  context: CanvasRenderingContext2D,
-  node: NodeLayout,
-  isHovered: boolean,
-  breedingStatusIcon: CanvasImageSource | null
-) {
-  const { x, y } = getStatusIconCenter(node);
-
-  context.save();
-  context.beginPath();
-  context.arc(x, y, STATUS_ICON_RADIUS, 0, Math.PI * 2);
-  context.fillStyle = isHovered ? "rgba(255, 242, 244, 0.98)" : "rgba(248, 235, 238, 0.96)";
-  context.strokeStyle = isHovered ? "rgba(191, 82, 108, 0.72)" : "rgba(151, 114, 123, 0.44)";
-  context.lineWidth = 1.25;
-  context.shadowColor = isHovered ? "rgba(191, 82, 108, 0.18)" : "transparent";
-  context.shadowBlur = isHovered ? 14 : 0;
-  context.fill();
-  context.stroke();
-
-  context.shadowColor = "transparent";
-
-  if (breedingStatusIcon) {
-    const iconSize = 11;
-    context.drawImage(breedingStatusIcon, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize);
-  }
 
   context.restore();
 }
@@ -1593,21 +1464,9 @@ function getGearButtonCenter(node: NodeLayout) {
   };
 }
 
-function getStatusIconCenter(node: NodeLayout) {
-  return {
-    x: node.x + node.width / 2 - 18,
-    y: node.y - node.height / 2 + 18
-  };
-}
-
 function isPointInGearButton(node: NodeLayout, x: number, y: number) {
   const center = getGearButtonCenter(node);
   return Math.hypot(x - center.x, y - center.y) <= GEAR_BUTTON_RADIUS;
-}
-
-function isPointInStatusIcon(node: NodeLayout, x: number, y: number) {
-  const center = getStatusIconCenter(node);
-  return Math.hypot(x - center.x, y - center.y) <= STATUS_ICON_RADIUS;
 }
 
 function resolveHoveredTarget(layout: Map<string, NodeLayout>, x: number, y: number): HoveredTarget {
@@ -1620,13 +1479,7 @@ function resolveHoveredTarget(layout: Map<string, NodeLayout>, x: number, y: num
     return { animalId: target.animal.id, area: "gear" };
   }
 
-  if (!target.animal.isBreedingApproved && isPointInStatusIcon(target, x, y)) {
-    return { animalId: target.animal.id, area: "status" };
-  }
-
-  return target.animal.isBreedingApproved
-    ? { animalId: target.animal.id, area: "node" }
-    : { animalId: target.animal.id, area: "disabled" };
+  return { animalId: target.animal.id, area: "node" };
 }
 
 function roundRectPath(

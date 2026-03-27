@@ -11,7 +11,6 @@ type AnimalDraft = {
   fatherId: string;
   motherId: string;
   birthDate: string;
-  isBreedingApproved: boolean;
 };
 
 type PregnancyDraft = {
@@ -49,8 +48,7 @@ function createDraft(animal: Animal): AnimalDraft {
     gender: animal.gender,
     fatherId: animal.fatherId ?? "",
     motherId: animal.motherId ?? "",
-    birthDate: animal.birthDate,
-    isBreedingApproved: animal.isBreedingApproved
+    birthDate: animal.birthDate
   };
 }
 
@@ -234,16 +232,14 @@ function buildParentOptions(
   animals: Animal[],
   gender: AnimalGender,
   animalId: string,
-  descendantIds: Set<string>,
-  selectedId: string
+  descendantIds: Set<string>
 ) {
   return sortAnimals(
     animals.filter(
       (entry) =>
         entry.gender === gender &&
         entry.id !== animalId &&
-        !descendantIds.has(entry.id) &&
-        (entry.isBreedingApproved || entry.id === selectedId)
+        !descendantIds.has(entry.id)
     )
   );
 }
@@ -441,26 +437,6 @@ function GenderBadge({ gender, messages }: { gender: AnimalGender; messages: Mes
   );
 }
 
-function BreedingStatusBadge({
-  isBreedingApproved,
-  messages
-}: {
-  isBreedingApproved: boolean;
-  messages: Messages;
-}) {
-  return (
-    <span
-      className={
-        isBreedingApproved
-          ? "profile-badge profile-badge-breeding-approved"
-          : "profile-badge profile-badge-breeding-restricted"
-      }
-    >
-      {isBreedingApproved ? messages.breedingApproved : messages.breedingRestricted}
-    </span>
-  );
-}
-
 export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: AnimalProfilePageProps) {
   const { animalId } = useParams();
   const navigate = useNavigate();
@@ -508,11 +484,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     [animal, animals]
   );
   const maleOptions = useMemo(
-    () => (animal ? buildParentOptions(animals, "male", animal.id, descendantIds, draft?.fatherId ?? "") : []),
+    () => (animal ? buildParentOptions(animals, "male", animal.id, descendantIds) : []),
     [animal, animals, descendantIds, draft?.fatherId]
   );
   const femaleOptions = useMemo(
-    () => (animal ? buildParentOptions(animals, "female", animal.id, descendantIds, draft?.motherId ?? "") : []),
+    () => (animal ? buildParentOptions(animals, "female", animal.id, descendantIds) : []),
     [animal, animals, descendantIds, draft?.motherId]
   );
   const children = useMemo(
@@ -739,8 +715,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
               gender: draft.gender,
               fatherId: draft.fatherId || null,
               motherId: draft.motherId || null,
-              birthDate: draft.birthDate,
-              isBreedingApproved: draft.isBreedingApproved
+              birthDate: draft.birthDate
             }
           : entry
       )
@@ -806,7 +781,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
           <div className="profile-hero-side">
             <div className="profile-hero-meta">
               <GenderBadge gender={animal.gender} messages={messages} />
-              <BreedingStatusBadge isBreedingApproved={animal.isBreedingApproved} messages={messages} />
               <div className="profile-hero-date">
                 <span>{messages.birthDate}</span>
                 <strong>{formatDate(animal.birthDate)}</strong>
@@ -873,27 +847,12 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                 {hasChildren ? <div className="field-hint">{messages.genderLockedHint}</div> : null}
 
                 <label>
-                  {messages.breedingStatus}
-                  <select
-                    value={draft.isBreedingApproved ? "approved" : "restricted"}
-                    onChange={(event) => updateDraft("isBreedingApproved", event.target.value === "approved")}
-                  >
-                    <option value="approved">{messages.breedingApproved}</option>
-                    <option value="restricted">{messages.breedingRestricted}</option>
-                  </select>
-                </label>
-
-                <div className="field-hint">{messages.breedingStatusHint}</div>
-
-                <label>
                   {messages.father}
                   <select value={draft.fatherId} onChange={(event) => updateDraft("fatherId", event.target.value)}>
                     <option value="">{messages.fatherPlaceholder}</option>
                     {maleOptions.map((entry) => (
                       <option key={entry.id} value={entry.id}>
-                        {entry.isBreedingApproved || entry.id !== draft.fatherId
-                          ? entry.name
-                          : `${entry.name} (${messages.breedingRestricted})`}
+                        {entry.name}
                       </option>
                     ))}
                   </select>
@@ -905,15 +864,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                     <option value="">{messages.motherPlaceholder}</option>
                     {femaleOptions.map((entry) => (
                       <option key={entry.id} value={entry.id}>
-                        {entry.isBreedingApproved || entry.id !== draft.motherId
-                          ? entry.name
-                          : `${entry.name} (${messages.breedingRestricted})`}
+                        {entry.name}
                       </option>
                     ))}
                   </select>
                 </label>
-
-                <div className="field-hint">{messages.breedingSelectableHint}</div>
 
                 <label>
                   {messages.birthDate}

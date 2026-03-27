@@ -18,7 +18,6 @@ export type Animal = {
   fatherId: string | null;
   motherId: string | null;
   birthDate: string;
-  isBreedingApproved: boolean;
   pregnancy: AnimalPregnancy;
   vaccinations: AnimalVaccination[];
 };
@@ -116,11 +115,10 @@ function normalizeAnimal(raw: unknown): Animal | null {
   const name = normalizeRequiredString(raw.name);
   const birthDate = normalizeRequiredString(raw.birthDate);
   const gender = normalizeGender(raw.gender);
-  const isBreedingApproved = normalizeBoolean(raw.isBreedingApproved);
   const pregnancy = normalizePregnancy(raw.pregnancy);
   const vaccinations = normalizeVaccinations(raw.vaccinations);
 
-  if (!id || !name || !birthDate || !gender || isBreedingApproved === null || !pregnancy || vaccinations === null) {
+  if (!id || !name || !birthDate || !gender || !pregnancy || vaccinations === null) {
     return null;
   }
 
@@ -131,7 +129,6 @@ function normalizeAnimal(raw: unknown): Animal | null {
     fatherId: normalizeOptionalString(raw.fatherId),
     motherId: normalizeOptionalString(raw.motherId),
     birthDate,
-    isBreedingApproved,
     pregnancy,
     vaccinations
   };
@@ -178,10 +175,6 @@ function normalizeRequiredString(value: unknown): string | null {
 
 function normalizeOptionalString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function normalizeBoolean(value: unknown): boolean | null {
-  return typeof value === "boolean" ? value : null;
 }
 
 function normalizePregnancy(value: unknown): AnimalPregnancy | null {

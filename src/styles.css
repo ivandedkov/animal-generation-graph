@@ -694,16 +694,6 @@ button {
   color: #b03c73;
 }
 
-.profile-badge-breeding-approved {
-  background: rgba(131, 181, 104, 0.18);
-  color: #456b2f;
-}
-
-.profile-badge-breeding-restricted {
-  background: rgba(130, 145, 167, 0.18);
-  color: #566273;
-}
-
 .profile-hero-date {
   display: grid;
   gap: 6px;
