@@ -569,12 +569,31 @@ button {
 }
 
 .profile-shell {
+  position: relative;
   min-height: 100vh;
   padding: 28px;
   background:
     radial-gradient(circle at top left, rgba(124, 181, 255, 0.24), transparent 32%),
     radial-gradient(circle at top right, rgba(255, 173, 198, 0.2), transparent 28%),
     linear-gradient(180deg, #f8f5ee 0%, #f2f6fb 100%);
+}
+
+.profile-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 5;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 18px;
+  box-shadow: 0 18px 38px rgba(40, 55, 85, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.profile-toast-error {
+  background: rgba(255, 240, 244, 0.96);
+  border: 1px solid rgba(209, 75, 106, 0.24);
+  color: #a53358;
 }
 
 .profile-page {
@@ -786,28 +805,6 @@ button {
   justify-content: space-between;
   gap: 12px;
   margin-top: 8px;
-}
-
-.profile-save-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.profile-save-indicator-saving {
-  background: rgba(79, 137, 223, 0.14);
-  color: #2f62ad;
-}
-
-.profile-save-indicator-saved {
-  background: rgba(131, 181, 104, 0.16);
-  color: #456b2f;
 }
 
 .profile-kidding-layout {
@@ -1213,6 +1210,11 @@ button {
 @media (max-width: 860px) {
   .profile-shell {
     padding: 18px;
+  }
+
+  .profile-toast {
+    top: 18px;
+    right: 18px;
   }
 
   .profile-topbar,

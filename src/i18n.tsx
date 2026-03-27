@@ -45,8 +45,7 @@ export type Messages = {
   confirmDeleteAction: string;
   cancel: string;
   save: string;
-  profileAutosaveSaving: string;
-  profileAutosaveSaved: string;
+  profileAutosaveError: string;
   openProfile: string;
   noDate: string;
   profileGeneralTab: string;
@@ -193,8 +192,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     confirmDeleteAction: "Да, удалить",
     cancel: "Отмена",
     save: "Сохранить",
-    profileAutosaveSaving: "Сохраняется...",
-    profileAutosaveSaved: "Сохранено",
+    profileAutosaveError: "Не удалось сохранить изменения",
     openProfile: "Профиль",
     noDate: "Без даты",
     profileGeneralTab: "Общее",
@@ -312,8 +310,7 @@ const messagesByLocale: Record<Locale, Messages> = {
     confirmDeleteAction: "Yes, delete",
     cancel: "Cancel",
     save: "Save",
-    profileAutosaveSaving: "Saving...",
-    profileAutosaveSaved: "Saved",
+    profileAutosaveError: "Failed to save changes",
     openProfile: "Profile",
     noDate: "No date",
     profileGeneralTab: "General",

@@ -38,7 +38,6 @@ type CloseRelationType =
 
 type RelationRiskLevel = "high" | "medium";
 type VaccinationStatus = "missing" | "current" | "due_soon" | "overdue";
-type SaveIndicatorState = "idle" | "saving" | "saved";
 
 const MAX_NAME_LENGTH = 20;
 const DEFAULT_GESTATION_DAYS = 148;
@@ -335,10 +334,6 @@ function getPregnancyStatusLabel(status: AnimalPregnancyStatus, messages: Messag
   }
 }
 
-function getSaveIndicatorLabel(state: SaveIndicatorState, messages: Messages) {
-  return state === "saving" ? messages.profileAutosaveSaving : messages.profileAutosaveSaved;
-}
-
 function todayValue() {
   const now = new Date();
   const year = now.getFullYear();
@@ -466,22 +461,6 @@ function BreedingStatusBadge({
   );
 }
 
-function SaveIndicator({ state, messages }: { state: SaveIndicatorState; messages: Messages }) {
-  if (state === "idle") {
-    return null;
-  }
-
-  return (
-    <span
-      className={
-        state === "saving" ? "profile-save-indicator profile-save-indicator-saving" : "profile-save-indicator profile-save-indicator-saved"
-      }
-    >
-      {getSaveIndicatorLabel(state, messages)}
-    </span>
-  );
-}
-
 export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: AnimalProfilePageProps) {
   const { animalId } = useParams();
   const navigate = useNavigate();
@@ -492,11 +471,9 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   const [vaccinationDraft, setVaccinationDraft] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [pregnancyError, setPregnancyError] = useState("");
-  const [pregnancySaveState, setPregnancySaveState] = useState<SaveIndicatorState>("idle");
-  const [vaccinationSaveState, setVaccinationSaveState] = useState<SaveIndicatorState>("idle");
+  const [saveErrorToast, setSaveErrorToast] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const pregnancySaveTimerRef = useRef<number | null>(null);
-  const vaccinationSaveTimerRef = useRef<number | null>(null);
+  const saveErrorToastTimerRef = useRef<number | null>(null);
 
   const animal = useMemo(() => animals.find((entry) => entry.id === animalId) ?? null, [animalId, animals]);
 
@@ -507,20 +484,15 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
       setVaccinationDraft(createVaccinationDraft(animal));
       setFormError("");
       setPregnancyError("");
-      setPregnancySaveState("idle");
-      setVaccinationSaveState("idle");
+      setSaveErrorToast("");
       setDeleteConfirmOpen(false);
     }
   }, [animal]);
 
   useEffect(() => {
     return () => {
-      if (pregnancySaveTimerRef.current !== null) {
-        window.clearTimeout(pregnancySaveTimerRef.current);
-      }
-
-      if (vaccinationSaveTimerRef.current !== null) {
-        window.clearTimeout(vaccinationSaveTimerRef.current);
+      if (saveErrorToastTimerRef.current !== null) {
+        window.clearTimeout(saveErrorToastTimerRef.current);
       }
     };
   }, []);
@@ -643,22 +615,16 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     setDraft((current) => (current ? { ...current, [key]: value } : current));
   };
 
-  const pulseSaveState = (
-    setState: Dispatch<SetStateAction<SaveIndicatorState>>,
-    timerRef: { current: number | null }
-  ) => {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
+  const showSaveErrorToast = () => {
+    if (saveErrorToastTimerRef.current !== null) {
+      window.clearTimeout(saveErrorToastTimerRef.current);
     }
 
-    setState("saving");
-    timerRef.current = window.setTimeout(() => {
-      setState("saved");
-      timerRef.current = window.setTimeout(() => {
-        setState("idle");
-        timerRef.current = null;
-      }, 1600);
-    }, 180);
+    setSaveErrorToast(messages.profileAutosaveError);
+    saveErrorToastTimerRef.current = window.setTimeout(() => {
+      setSaveErrorToast("");
+      saveErrorToastTimerRef.current = null;
+    }, 3200);
   };
 
   const persistPregnancyDraft = (nextDraft: PregnancyDraft) => {
@@ -689,17 +655,21 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     }
 
     setPregnancyError("");
-    setAnimals((current) =>
-      current.map((entry) =>
-        entry.id === animal.id
-          ? {
-              ...entry,
-              pregnancy: nextPregnancy
-            }
-          : entry
-      )
-    );
-    pulseSaveState(setPregnancySaveState, pregnancySaveTimerRef);
+
+    try {
+      setAnimals((current) =>
+        current.map((entry) =>
+          entry.id === animal.id
+            ? {
+                ...entry,
+                pregnancy: nextPregnancy
+              }
+            : entry
+        )
+      );
+    } catch {
+      showSaveErrorToast();
+    }
   };
 
   const updatePregnancyDraft = <K extends keyof PregnancyDraft>(key: K, value: PregnancyDraft[K]) => {
@@ -721,17 +691,20 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
         [vaccineId]: value
       };
 
-      setAnimals((currentAnimals) =>
-        currentAnimals.map((entry) =>
-          entry.id === animal.id
-            ? {
-                ...entry,
-                vaccinations: buildVaccinationRecords(nextDraft)
-              }
-            : entry
-        )
-      );
-      pulseSaveState(setVaccinationSaveState, vaccinationSaveTimerRef);
+      try {
+        setAnimals((currentAnimals) =>
+          currentAnimals.map((entry) =>
+            entry.id === animal.id
+              ? {
+                  ...entry,
+                  vaccinations: buildVaccinationRecords(nextDraft)
+                }
+              : entry
+          )
+        );
+      } catch {
+        showSaveErrorToast();
+      }
 
       return nextDraft;
     });
@@ -794,6 +767,12 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
 
   return (
     <div className="profile-shell">
+      {saveErrorToast ? (
+        <div className="profile-toast profile-toast-error" role="status" aria-live="polite">
+          {saveErrorToast}
+        </div>
+      ) : null}
+
       <div className="profile-page">
         <header className="profile-topbar">
           <Link to="/" className="ghost-button profile-back-link">
@@ -986,7 +965,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                   <h2>{messages.profileKiddingTab}</h2>
                   <p>{messages.profileKiddingDescription}</p>
                 </div>
-                <SaveIndicator state={pregnancySaveState} messages={messages} />
               </div>
 
               <div className="profile-kidding-layout">
@@ -1073,7 +1051,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                   <h2>{messages.profileVaccinesTab}</h2>
                   <p>{messages.profileVaccinesDescription}</p>
                 </div>
-                <SaveIndicator state={vaccinationSaveState} messages={messages} />
               </div>
 
               <div className="profile-placeholder-grid">
