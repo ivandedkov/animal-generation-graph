@@ -570,8 +570,16 @@ button {
 
 .profile-shell {
   position: relative;
+  isolation: isolate;
   min-height: 100vh;
   padding: 28px;
+}
+
+.profile-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
     radial-gradient(circle at top left, rgba(124, 181, 255, 0.24), transparent 32%),
     radial-gradient(circle at top right, rgba(255, 173, 198, 0.2), transparent 28%),
