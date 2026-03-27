@@ -996,6 +996,11 @@ export function AnimalBoardPage({ animals, setAnimals }: AnimalBoardPageProps) {
           motherId: normalizedMother,
           birthDate: draft.birthDate,
           isBreedingApproved: true,
+          pregnancy: {
+            status: "open",
+            breedingDate: null,
+            mateId: null
+          },
           vaccinations: []
         }
       ]);

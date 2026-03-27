@@ -784,6 +784,85 @@ button {
   margin-top: 8px;
 }
 
+.profile-kidding-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.profile-kidding-overview,
+.profile-kidding-form {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-kidding-hero {
+  border-radius: 24px;
+  padding: 22px;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.profile-kidding-hero span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-kidding-hero strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 28px;
+  line-height: 1.05;
+}
+
+.profile-kidding-hero p,
+.profile-kidding-note {
+  margin: 0;
+  color: rgba(24, 49, 83, 0.72);
+  line-height: 1.45;
+}
+
+.profile-kidding-note {
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(244, 247, 252, 0.92);
+  border: 1px solid rgba(110, 128, 160, 0.14);
+}
+
+.profile-kidding-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.profile-kidding-stats .profile-stat-card strong {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.profile-pregnancy-tone-open {
+  background: linear-gradient(180deg, rgba(244, 247, 252, 0.96), rgba(251, 252, 255, 0.9));
+  border-color: rgba(122, 137, 160, 0.18);
+  color: #556173;
+}
+
+.profile-pregnancy-tone-exposed {
+  background: linear-gradient(180deg, rgba(255, 244, 217, 0.96), rgba(255, 249, 236, 0.92));
+  border-color: rgba(211, 166, 56, 0.22);
+  color: #8a5a04;
+}
+
+.profile-pregnancy-tone-confirmed {
+  background: linear-gradient(180deg, rgba(228, 246, 221, 0.96), rgba(245, 252, 239, 0.92));
+  border-color: rgba(115, 173, 88, 0.24);
+  color: #456b2f;
+}
+
 .profile-vaccines-grid {
   display: grid;
   gap: 16px;
@@ -1139,7 +1218,9 @@ button {
 
   .profile-placeholder-grid,
   .profile-family-grid,
-  .profile-vaccine-meta {
+  .profile-vaccine-meta,
+  .profile-kidding-layout,
+  .profile-kidding-stats {
     grid-template-columns: 1fr;
   }
 

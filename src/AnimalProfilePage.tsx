@@ -1,6 +1,6 @@
 import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Animal, AnimalGender, AnimalVaccination } from "./animal-data";
+import { Animal, AnimalGender, AnimalPregnancyStatus, AnimalVaccination } from "./animal-data";
 import { openDateInputPicker } from "./date-input";
 import { Messages, localeOptions, useI18n } from "./i18n";
 import { calculateNextVaccinationDate, getVaccinationDefinitions, vaccinationCatalog } from "./vaccination-catalog";
@@ -12,6 +12,12 @@ type AnimalDraft = {
   motherId: string;
   birthDate: string;
   isBreedingApproved: boolean;
+};
+
+type PregnancyDraft = {
+  status: AnimalPregnancyStatus;
+  breedingDate: string;
+  mateId: string;
 };
 
 type AnimalProfilePageProps = {
@@ -35,6 +41,7 @@ type RelationRiskLevel = "high" | "medium";
 type VaccinationStatus = "missing" | "current" | "due_soon" | "overdue";
 
 const MAX_NAME_LENGTH = 20;
+const DEFAULT_GESTATION_DAYS = 148;
 const NAME_COLLATOR = new Intl.Collator(["ru", "en"], { sensitivity: "base", numeric: true });
 
 function createDraft(animal: Animal): AnimalDraft {
@@ -50,6 +57,14 @@ function createDraft(animal: Animal): AnimalDraft {
 
 function createVaccinationDraft(animal: Animal) {
   return Object.fromEntries(animal.vaccinations.map((record) => [record.vaccineId, record.lastDate]));
+}
+
+function createPregnancyDraft(animal: Animal): PregnancyDraft {
+  return {
+    status: animal.pregnancy.status,
+    breedingDate: animal.pregnancy.breedingDate ?? "",
+    mateId: animal.pregnancy.mateId ?? ""
+  };
 }
 
 function getParentIds(animal: Animal | undefined) {
@@ -251,6 +266,25 @@ function daysBetween(from: string, to: string) {
   return Math.round((toDate - fromDate) / millisecondsPerDay);
 }
 
+function addDays(value: string, days: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+  date.setUTCDate(date.getUTCDate() + days);
+
+  const nextYear = date.getUTCFullYear();
+  const nextMonth = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const nextDay = `${date.getUTCDate()}`.padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
+function calculateExpectedKiddingDate(breedingDate: string) {
+  if (!breedingDate) {
+    return "";
+  }
+
+  return addDays(breedingDate, DEFAULT_GESTATION_DAYS);
+}
+
 function getVaccinationStatus(lastDate: string, nextDate: string, today: string): VaccinationStatus {
   if (!lastDate || !nextDate) {
     return "missing";
@@ -277,6 +311,28 @@ function getVaccinationStatusClass(status: VaccinationStatus) {
       return "profile-vaccine-tone-current";
     default:
       return "profile-vaccine-tone-missing";
+  }
+}
+
+function getPregnancyStatusToneClass(status: AnimalPregnancyStatus) {
+  switch (status) {
+    case "confirmed":
+      return "profile-pregnancy-tone-confirmed";
+    case "exposed":
+      return "profile-pregnancy-tone-exposed";
+    default:
+      return "profile-pregnancy-tone-open";
+  }
+}
+
+function getPregnancyStatusLabel(status: AnimalPregnancyStatus, messages: Messages) {
+  switch (status) {
+    case "confirmed":
+      return messages.profileKiddingStatusConfirmed;
+    case "exposed":
+      return messages.profileKiddingStatusExposed;
+    default:
+      return messages.profileKiddingStatusOpen;
   }
 }
 
@@ -413,8 +469,10 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   const { locale, setLocale, messages, formatDate } = useI18n();
   const [activeTab, setActiveTab] = useState<ProfileTab>("general");
   const [draft, setDraft] = useState<AnimalDraft | null>(null);
+  const [pregnancyDraft, setPregnancyDraft] = useState<PregnancyDraft | null>(null);
   const [vaccinationDraft, setVaccinationDraft] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
+  const [pregnancyError, setPregnancyError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const animal = useMemo(() => animals.find((entry) => entry.id === animalId) ?? null, [animalId, animals]);
@@ -422,8 +480,10 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   useEffect(() => {
     if (animal) {
       setDraft(createDraft(animal));
+      setPregnancyDraft(createPregnancyDraft(animal));
       setVaccinationDraft(createVaccinationDraft(animal));
       setFormError("");
+      setPregnancyError("");
       setDeleteConfirmOpen(false);
     }
   }, [animal]);
@@ -446,6 +506,10 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     () => (animal ? buildParentOptions(animals, "female", animal.id, descendantIds, draft?.motherId ?? "") : []),
     [animal, animals, descendantIds, draft?.motherId]
   );
+  const pregnancyMateOptions = useMemo(
+    () => (animal ? buildParentOptions(animals, "male", animal.id, descendantIds, pregnancyDraft?.mateId ?? "") : []),
+    [animal, animals, descendantIds, pregnancyDraft?.mateId]
+  );
   const children = useMemo(
     () =>
       animal
@@ -457,6 +521,13 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     () => (draft ? getRelationWarning(animals, draft.fatherId, draft.motherId, messages) : null),
     [animals, draft, messages]
   );
+  const relatedPregnancyWarning = useMemo(() => {
+    if (!animal || !pregnancyDraft || !pregnancyDraft.mateId || pregnancyDraft.status === "open") {
+      return null;
+    }
+
+    return getRelationWarning(animals, pregnancyDraft.mateId, animal.id, messages);
+  }, [animal, animals, pregnancyDraft, messages]);
   const vaccinationDefinitions = useMemo(
     () => (animal ? getVaccinationDefinitions(locale, animal.gender) : []),
     [animal, locale]
@@ -477,12 +548,13 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     });
   }, [vaccinationDefinitions, vaccinationDraft]);
   const hasChildren = Boolean(animal && children.length > 0);
+  const today = todayValue();
 
   if (!animalsLoaded) {
     return <div className="profile-shell" />;
   }
 
-  if (!animal || !draft) {
+  if (!animal || !draft || !pregnancyDraft) {
     return (
       <div className="profile-shell">
         <div className="profile-page">
@@ -517,9 +589,35 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     );
   }
 
+  const hasActivePregnancy = pregnancyDraft.status !== "open";
+  const expectedKiddingDate = hasActivePregnancy ? calculateExpectedKiddingDate(pregnancyDraft.breedingDate) : "";
+  const pregnancyDaysElapsed =
+    hasActivePregnancy && pregnancyDraft.breedingDate
+      ? Math.max(daysBetween(pregnancyDraft.breedingDate, today) + 1, 1)
+      : null;
+  const daysUntilKidding = expectedKiddingDate ? daysBetween(today, expectedKiddingDate) : null;
+  const pregnancyMateName =
+    pregnancyDraft.mateId ? animals.find((entry) => entry.id === pregnancyDraft.mateId)?.name ?? "" : "";
+  const pregnancyStatusLabel = getPregnancyStatusLabel(pregnancyDraft.status, messages);
+  const pregnancyCountdownLabel =
+    daysUntilKidding === null
+      ? messages.profileKiddingNoActiveTitle
+      : daysUntilKidding < 0
+        ? messages.profileKiddingCountdownOverdue(Math.abs(daysUntilKidding))
+        : daysUntilKidding === 0
+          ? messages.profileKiddingCountdownToday
+          : messages.profileKiddingCountdownRemaining(daysUntilKidding);
+  const pregnancyDayLabel =
+    pregnancyDaysElapsed === null ? messages.noDate : messages.profileKiddingPregnancyDay(pregnancyDaysElapsed);
+
   const updateDraft = <K extends keyof AnimalDraft>(key: K, value: AnimalDraft[K]) => {
     setFormError("");
     setDraft((current) => (current ? { ...current, [key]: value } : current));
+  };
+
+  const updatePregnancyDraft = <K extends keyof PregnancyDraft>(key: K, value: PregnancyDraft[K]) => {
+    setPregnancyError("");
+    setPregnancyDraft((current) => (current ? { ...current, [key]: value } : current));
   };
 
   const updateVaccinationDate = (vaccineId: string, value: string) => {
@@ -542,6 +640,78 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
 
       return nextDraft;
     });
+  };
+
+  const savePregnancy = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (pregnancyDraft.status !== "open" && !pregnancyDraft.breedingDate) {
+      setPregnancyError(messages.profileKiddingDateRequired);
+      return;
+    }
+
+    if (pregnancyDraft.status !== "open" && pregnancyDraft.breedingDate > today) {
+      setPregnancyError(messages.profileKiddingFutureDateError);
+      return;
+    }
+
+    const nextPregnancy =
+      pregnancyDraft.status === "open"
+        ? {
+            status: "open" as const,
+            breedingDate: null,
+            mateId: null
+          }
+        : {
+            status: pregnancyDraft.status,
+            breedingDate: pregnancyDraft.breedingDate,
+            mateId: pregnancyDraft.mateId || null
+          };
+
+    setAnimals((current) =>
+      current.map((entry) =>
+        entry.id === animal.id
+          ? {
+              ...entry,
+              pregnancy: nextPregnancy
+            }
+          : entry
+      )
+    );
+    setPregnancyDraft({
+      status: nextPregnancy.status,
+      breedingDate: nextPregnancy.breedingDate ?? "",
+      mateId: nextPregnancy.mateId ?? ""
+    });
+    setPregnancyError("");
+  };
+
+  const markKiddingCompleted = () => {
+    setAnimals((current) =>
+      current.map((entry) =>
+        entry.id === animal.id
+          ? {
+              ...entry,
+              pregnancy: {
+                status: "open",
+                breedingDate: null,
+                mateId: null
+              }
+            }
+          : entry
+      )
+    );
+    setPregnancyDraft((current) =>
+      current
+        ? {
+            ...current,
+            status: "open",
+            breedingDate: "",
+            mateId: ""
+          }
+        : current
+    );
+    setPregnancyError("");
   };
 
   const saveProfile = (event: FormEvent<HTMLFormElement>) => {
@@ -782,17 +952,132 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                 <p>{messages.profileKiddingDescription}</p>
               </div>
 
-              <div className="profile-placeholder-grid">
-                <article className="profile-placeholder-card">
-                  <span>{messages.profileKiddingTab}</span>
-                  <strong>{messages.profileKiddingEmptyTitle}</strong>
-                  <p>{messages.profileKiddingEmptyDescription}</p>
-                </article>
-                <article className="profile-placeholder-card">
-                  <span>{messages.profileChildrenTitle}</span>
-                  <strong>{children.length === 0 ? messages.profileNoChildren : `${children.length}`}</strong>
-                  <p>{children.length === 0 ? messages.profileGeneralDescription : children.map((child) => child.name).join(", ")}</p>
-                </article>
+              <div className="profile-kidding-layout">
+                <div className="profile-kidding-overview">
+                  <article
+                    className={`profile-kidding-hero ${getPregnancyStatusToneClass(pregnancyDraft.status)}`}
+                  >
+                    <span>{messages.profileKiddingStatusLabel}</span>
+                    <strong>{pregnancyStatusLabel}</strong>
+                    <p>
+                      {hasActivePregnancy ? messages.profileKiddingFixedTermHint : messages.profileKiddingNoActiveDescription}
+                    </p>
+                  </article>
+
+                  <div className="profile-kidding-stats">
+                    <article className="profile-stat-card">
+                      <span>{messages.profileKiddingExpectedDateTitle}</span>
+                      <strong>{expectedKiddingDate ? formatDate(expectedKiddingDate) : messages.noDate}</strong>
+                    </article>
+                    <article className="profile-stat-card">
+                      <span>{messages.profileKiddingCountdownTitle}</span>
+                      <strong>{pregnancyCountdownLabel}</strong>
+                    </article>
+                    <article className="profile-stat-card">
+                      <span>{messages.profileKiddingCurrentDayTitle}</span>
+                      <strong>{pregnancyDayLabel}</strong>
+                    </article>
+                    <article className="profile-stat-card">
+                      <span>{messages.profileKiddingMateTitle}</span>
+                      <strong>{pregnancyMateName || messages.profileKiddingNoMate}</strong>
+                    </article>
+                    <article className="profile-stat-card">
+                      <span>{messages.profileChildrenTitle}</span>
+                      <strong>{children.length === 0 ? messages.profileNoChildren : `${children.length}`}</strong>
+                    </article>
+                  </div>
+                </div>
+
+                <form className="animal-form profile-form profile-kidding-form" onSubmit={savePregnancy}>
+                  <label>
+                    {messages.profileKiddingStatusLabel}
+                    <select
+                      value={pregnancyDraft.status}
+                      onChange={(event) =>
+                        updatePregnancyDraft("status", event.target.value as AnimalPregnancyStatus)
+                      }
+                    >
+                      <option value="open">{messages.profileKiddingStatusOpen}</option>
+                      <option value="exposed">{messages.profileKiddingStatusExposed}</option>
+                      <option value="confirmed">{messages.profileKiddingStatusConfirmed}</option>
+                    </select>
+                  </label>
+
+                  <div className="field-hint">{messages.profileKiddingStatusHint}</div>
+
+                  {pregnancyDraft.status !== "open" ? (
+                    <>
+                      <label>
+                        {messages.profileKiddingDateLabel}
+                        <input
+                          type="date"
+                          value={pregnancyDraft.breedingDate}
+                          onChange={(event) => updatePregnancyDraft("breedingDate", event.target.value)}
+                          onClick={openDateInputPicker}
+                          required
+                        />
+                      </label>
+
+                      <div className="field-hint">{messages.profileKiddingDateHint}</div>
+
+                      <label>
+                        {messages.profileKiddingMateLabel}
+                        <select
+                          value={pregnancyDraft.mateId}
+                          onChange={(event) => updatePregnancyDraft("mateId", event.target.value)}
+                        >
+                          <option value="">{messages.profileKiddingMatePlaceholder}</option>
+                          {pregnancyMateOptions.map((entry) => (
+                            <option key={entry.id} value={entry.id}>
+                              {entry.isBreedingApproved || entry.id !== pregnancyDraft.mateId
+                                ? entry.name
+                                : `${entry.name} (${messages.breedingRestricted})`}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <div className="field-hint">{messages.profileKiddingMateHint}</div>
+                    </>
+                  ) : (
+                    <div className="profile-kidding-note">{messages.profileKiddingNoActiveDescription}</div>
+                  )}
+
+                  <div className="profile-kidding-note">{messages.profileKiddingFixedTermHint}</div>
+
+                  {relatedPregnancyWarning ? (
+                    <div
+                      className={
+                        relatedPregnancyWarning.level === "high"
+                          ? "form-warning form-warning-high"
+                          : "form-warning form-warning-medium"
+                      }
+                    >
+                      <strong>
+                        {relatedPregnancyWarning.level === "high"
+                          ? messages.relatedParentsHighRiskTitle
+                          : messages.relatedParentsMediumRiskTitle}
+                        :
+                      </strong>{" "}
+                      {relatedPregnancyWarning.text}
+                    </div>
+                  ) : null}
+
+                  {pregnancyError ? <div className="form-error">{pregnancyError}</div> : null}
+
+                  <div className="profile-form-actions">
+                    {hasActivePregnancy ? (
+                      <button className="ghost-button" type="button" onClick={markKiddingCompleted}>
+                        {messages.profileKiddingMarkCompleted}
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                    <button className="primary-button" type="submit">
+                      {messages.save}
+                    </button>
+                  </div>
+                </form>
               </div>
             </section>
           </div>

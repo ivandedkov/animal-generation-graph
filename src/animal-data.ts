@@ -1,8 +1,15 @@
 export type AnimalGender = "male" | "female";
+export type AnimalPregnancyStatus = "open" | "exposed" | "confirmed";
 
 export type AnimalVaccination = {
   vaccineId: string;
   lastDate: string;
+};
+
+export type AnimalPregnancy = {
+  status: AnimalPregnancyStatus;
+  breedingDate: string | null;
+  mateId: string | null;
 };
 
 export type Animal = {
@@ -13,16 +20,17 @@ export type Animal = {
   motherId: string | null;
   birthDate: string;
   isBreedingApproved: boolean;
+  pregnancy: AnimalPregnancy;
   vaccinations: AnimalVaccination[];
 };
 
 type AnimalSnapshot = {
-  version: 2;
+  version: 3;
   animals: Animal[];
 };
 
 const STORAGE_KEY = "animal-generation-canvas";
-const CURRENT_SNAPSHOT_VERSION = 2;
+const CURRENT_SNAPSHOT_VERSION = 3;
 
 export function createAnimalId() {
   return `animal-${crypto.randomUUID()}`;
@@ -95,7 +103,8 @@ function normalizeAnimals(raw: unknown): Animal[] {
   return animals.map((animal) => ({
     ...animal,
     fatherId: resolveParentId(animal.fatherId, byId, "male"),
-    motherId: resolveParentId(animal.motherId, byId, "female")
+    motherId: resolveParentId(animal.motherId, byId, "female"),
+    pregnancy: resolvePregnancy(animal.pregnancy, byId)
   }));
 }
 
@@ -109,9 +118,10 @@ function normalizeAnimal(raw: unknown): Animal | null {
   const birthDate = normalizeRequiredString(raw.birthDate);
   const gender = normalizeGender(raw.gender);
   const isBreedingApproved = normalizeBoolean(raw.isBreedingApproved);
+  const pregnancy = normalizePregnancy(raw.pregnancy);
   const vaccinations = normalizeVaccinations(raw.vaccinations);
 
-  if (!id || !name || !birthDate || !gender || isBreedingApproved === null || vaccinations === null) {
+  if (!id || !name || !birthDate || !gender || isBreedingApproved === null || !pregnancy || vaccinations === null) {
     return null;
   }
 
@@ -123,6 +133,7 @@ function normalizeAnimal(raw: unknown): Animal | null {
     motherId: normalizeOptionalString(raw.motherId),
     birthDate,
     isBreedingApproved,
+    pregnancy,
     vaccinations
   };
 }
@@ -140,8 +151,30 @@ function resolveParentId(parentId: string | null, byId: Map<string, Animal>, exp
   return parentId;
 }
 
+function resolvePregnancy(pregnancy: AnimalPregnancy, byId: Map<string, Animal>) {
+  if (pregnancy.status === "open" || !pregnancy.breedingDate) {
+    return {
+      ...pregnancy,
+      status: "open" as const,
+      breedingDate: null,
+      mateId: null
+    };
+  }
+
+  const mateId = resolveParentId(pregnancy.mateId, byId, "male");
+
+  return {
+    ...pregnancy,
+    mateId
+  };
+}
+
 function normalizeGender(value: unknown): AnimalGender | null {
   return value === "male" || value === "female" ? value : null;
+}
+
+function normalizePregnancyStatus(value: unknown): AnimalPregnancyStatus | null {
+  return value === "open" || value === "exposed" || value === "confirmed" ? value : null;
 }
 
 function normalizeRequiredString(value: unknown): string | null {
@@ -154,6 +187,34 @@ function normalizeOptionalString(value: unknown): string | null {
 
 function normalizeBoolean(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
+}
+
+function normalizePregnancy(value: unknown): AnimalPregnancy | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const status = normalizePregnancyStatus(value.status);
+  const breedingDate = normalizeOptionalString(value.breedingDate);
+  const mateId = normalizeOptionalString(value.mateId);
+
+  if (!status) {
+    return null;
+  }
+
+  if (status === "open" || !breedingDate) {
+    return {
+      status: "open",
+      breedingDate: null,
+      mateId: null
+    };
+  }
+
+  return {
+    status,
+    breedingDate,
+    mateId
+  };
 }
 
 function normalizeVaccinations(value: unknown): AnimalVaccination[] | null {
