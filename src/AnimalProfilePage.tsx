@@ -1053,19 +1053,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                 </div>
               </div>
 
-              <div className="profile-placeholder-grid">
-                <article className="profile-placeholder-card">
-                  <span>{messages.profileVaccinesTab}</span>
-                  <strong>{messages.profileVaccinesIntroTitle}</strong>
-                  <p>{messages.profileVaccinesIntroDescription}</p>
-                </article>
-                <article className="profile-placeholder-card">
-                  <span>{messages.profileVaccinesLastDate}</span>
-                  <strong>{messages.profileVaccinesNextDate}</strong>
-                  <p>{messages.profileVaccinesAutoSaveHint}</p>
-                </article>
-              </div>
-
               <div className="profile-vaccines-grid">
                 {vaccinationCards.map((vaccination) => (
                   <article key={vaccination.id} className="profile-vaccine-card">

@@ -51,13 +51,6 @@ export type Messages = {
   profileGeneralTab: string;
   profileKiddingTab: string;
   profileVaccinesTab: string;
-  profileSummaryTitle: string;
-  profileFamilyTitle: string;
-  profileParentsTitle: string;
-  profileChildrenTitle: string;
-  profileFatherUnknown: string;
-  profileMotherUnknown: string;
-  profileNoChildren: string;
   profileGeneralDescription: string;
   profileKiddingDescription: string;
   profileKiddingStatusLabel: string;
@@ -78,9 +71,6 @@ export type Messages = {
   profileKiddingPregnancyDay: (value: number) => string;
   profileKiddingMarkCompleted: string;
   profileVaccinesDescription: string;
-  profileVaccinesIntroTitle: string;
-  profileVaccinesIntroDescription: string;
-  profileVaccinesAutoSaveHint: string;
   profileVaccinesLastDate: string;
   profileVaccinesChooseDate: string;
   profileVaccinesNextDate: string;
@@ -92,8 +82,6 @@ export type Messages = {
   profileVaccinesStatusCurrent: string;
   profileVaccinesStatusDueSoon: string;
   profileVaccinesStatusOverdue: string;
-  profileKiddingEmptyTitle: string;
-  profileKiddingEmptyDescription: string;
   profileNotFoundTitle: string;
   profileNotFoundDescription: string;
   generation: (value: number) => string;
@@ -198,13 +186,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileGeneralTab: "Общее",
     profileKiddingTab: "Окоты",
     profileVaccinesTab: "Прививки",
-    profileSummaryTitle: "Сводка",
-    profileFamilyTitle: "Семья",
-    profileParentsTitle: "Родители",
-    profileChildrenTitle: "Потомки",
-    profileFatherUnknown: "Отец не указан",
-    profileMotherUnknown: "Мать не указана",
-    profileNoChildren: "Потомков пока нет",
     profileGeneralDescription: "Базовые данные животного.",
     profileKiddingDescription: "Отмечайте покрытие и смотрите, когда ориентировочно ждать окот.",
     profileKiddingStatusLabel: "Репродуктивный статус",
@@ -225,10 +206,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileKiddingPregnancyDay: (value) => `${value}-й день`,
     profileKiddingMarkCompleted: "Отметить окот",
     profileVaccinesDescription: "Базовый календарь прививок для овец и коз с автоматическим расчётом следующей даты.",
-    profileVaccinesIntroTitle: "Распространённые прививки для малого рогатого скота",
-    profileVaccinesIntroDescription:
-      "Это базовый список распространённых вакцин. Фактическая схема зависит от препарата, региона, эпизоотической ситуации и рекомендаций ветеринара.",
-    profileVaccinesAutoSaveHint: "Следующая дата считается автоматически от последней введённой прививки и сохраняется сразу.",
     profileVaccinesLastDate: "Последняя прививка",
     profileVaccinesChooseDate: "Выбирите дату",
     profileVaccinesNextDate: "Следующая дата",
@@ -240,8 +217,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileVaccinesStatusCurrent: "В графике",
     profileVaccinesStatusDueSoon: "Скоро",
     profileVaccinesStatusOverdue: "Просрочена",
-    profileKiddingEmptyTitle: "Журнал окотов появится здесь",
-    profileKiddingEmptyDescription: "Пока можно хранить заметки по беременности, окоту и количеству козлят.",
     profileNotFoundTitle: "Животное не найдено",
     profileNotFoundDescription: "Похоже, карточка была удалена или ссылка устарела.",
     generation: (value) => `Поколение ${value}`,
@@ -316,13 +291,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileGeneralTab: "General",
     profileKiddingTab: "Kidding",
     profileVaccinesTab: "Vaccines",
-    profileSummaryTitle: "Summary",
-    profileFamilyTitle: "Family",
-    profileParentsTitle: "Parents",
-    profileChildrenTitle: "Offspring",
-    profileFatherUnknown: "Father not specified",
-    profileMotherUnknown: "Mother not specified",
-    profileNoChildren: "No offspring yet",
     profileGeneralDescription: "Core animal data.",
     profileKiddingDescription: "Track breeding status and see when kidding is roughly due.",
     profileKiddingStatusLabel: "Breeding status",
@@ -343,10 +311,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileKiddingPregnancyDay: (value) => `Day ${value}`,
     profileKiddingMarkCompleted: "Mark kidding",
     profileVaccinesDescription: "Baseline sheep and goat vaccine planner with automatic next-date calculation.",
-    profileVaccinesIntroTitle: "Common small-ruminant vaccines",
-    profileVaccinesIntroDescription:
-      "This is a baseline list of common vaccines. The actual schedule depends on product label, region, disease pressure, and veterinarian guidance.",
-    profileVaccinesAutoSaveHint: "The next date is calculated automatically from the last recorded dose and saved immediately.",
     profileVaccinesLastDate: "Last vaccination",
     profileVaccinesChooseDate: "Pick a date",
     profileVaccinesNextDate: "Next date",
@@ -358,8 +322,6 @@ const messagesByLocale: Record<Locale, Messages> = {
     profileVaccinesStatusCurrent: "On track",
     profileVaccinesStatusDueSoon: "Soon",
     profileVaccinesStatusOverdue: "Overdue",
-    profileKiddingEmptyTitle: "The kidding log will live here",
-    profileKiddingEmptyDescription: "For now this can hold pregnancy notes, kidding outcomes, and kid counts.",
     profileNotFoundTitle: "Animal not found",
     profileNotFoundDescription: "This card may have been deleted or the link is outdated.",
     generation: (value) => `Generation ${value}`,
