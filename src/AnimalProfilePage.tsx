@@ -1,4 +1,4 @@
-import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from "react";
+import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Animal, AnimalGender, AnimalPregnancyStatus, AnimalVaccination } from "./animal-data";
 import { openDateInputPicker } from "./date-input";
@@ -38,6 +38,7 @@ type CloseRelationType =
 
 type RelationRiskLevel = "high" | "medium";
 type VaccinationStatus = "missing" | "current" | "due_soon" | "overdue";
+type SaveIndicatorState = "idle" | "saving" | "saved";
 
 const MAX_NAME_LENGTH = 20;
 const DEFAULT_GESTATION_DAYS = 148;
@@ -334,6 +335,10 @@ function getPregnancyStatusLabel(status: AnimalPregnancyStatus, messages: Messag
   }
 }
 
+function getSaveIndicatorLabel(state: SaveIndicatorState, messages: Messages) {
+  return state === "saving" ? messages.profileAutosaveSaving : messages.profileAutosaveSaved;
+}
+
 function todayValue() {
   const now = new Date();
   const year = now.getFullYear();
@@ -461,6 +466,22 @@ function BreedingStatusBadge({
   );
 }
 
+function SaveIndicator({ state, messages }: { state: SaveIndicatorState; messages: Messages }) {
+  if (state === "idle") {
+    return null;
+  }
+
+  return (
+    <span
+      className={
+        state === "saving" ? "profile-save-indicator profile-save-indicator-saving" : "profile-save-indicator profile-save-indicator-saved"
+      }
+    >
+      {getSaveIndicatorLabel(state, messages)}
+    </span>
+  );
+}
+
 export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: AnimalProfilePageProps) {
   const { animalId } = useParams();
   const navigate = useNavigate();
@@ -471,7 +492,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   const [vaccinationDraft, setVaccinationDraft] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [pregnancyError, setPregnancyError] = useState("");
+  const [pregnancySaveState, setPregnancySaveState] = useState<SaveIndicatorState>("idle");
+  const [vaccinationSaveState, setVaccinationSaveState] = useState<SaveIndicatorState>("idle");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const pregnancySaveTimerRef = useRef<number | null>(null);
+  const vaccinationSaveTimerRef = useRef<number | null>(null);
 
   const animal = useMemo(() => animals.find((entry) => entry.id === animalId) ?? null, [animalId, animals]);
 
@@ -482,9 +507,23 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
       setVaccinationDraft(createVaccinationDraft(animal));
       setFormError("");
       setPregnancyError("");
+      setPregnancySaveState("idle");
+      setVaccinationSaveState("idle");
       setDeleteConfirmOpen(false);
     }
   }, [animal]);
+
+  useEffect(() => {
+    return () => {
+      if (pregnancySaveTimerRef.current !== null) {
+        window.clearTimeout(pregnancySaveTimerRef.current);
+      }
+
+      if (vaccinationSaveTimerRef.current !== null) {
+        window.clearTimeout(vaccinationSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (animal?.gender !== "female" && activeTab === "kidding") {
@@ -605,6 +644,24 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     setPregnancyDraft((current) => (current ? { ...current, [key]: value } : current));
   };
 
+  const pulseSaveState = (
+    setState: Dispatch<SetStateAction<SaveIndicatorState>>,
+    timerRef: { current: number | null }
+  ) => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+    }
+
+    setState("saving");
+    timerRef.current = window.setTimeout(() => {
+      setState("saved");
+      timerRef.current = window.setTimeout(() => {
+        setState("idle");
+        timerRef.current = null;
+      }, 1600);
+    }, 180);
+  };
+
   const updateVaccinationDate = (vaccineId: string, value: string) => {
     setVaccinationDraft((current) => {
       const nextDraft = {
@@ -622,16 +679,32 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
             : entry
         )
       );
+      pulseSaveState(setVaccinationSaveState, vaccinationSaveTimerRef);
 
       return nextDraft;
     });
   };
 
-  const savePregnancy = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const markKiddingCompleted = () => {
+    setPregnancyDraft((current) =>
+      current
+        ? {
+            ...current,
+            status: "open",
+            breedingDate: ""
+          }
+        : current
+    );
+    setPregnancyError("");
+  };
+
+  useEffect(() => {
+    if (!animal || !pregnancyDraft) {
+      return;
+    }
 
     if (pregnancyDraft.status !== "open" && !pregnancyDraft.breedingDate) {
-      setPregnancyError(messages.profileKiddingDateRequired);
+      setPregnancyError("");
       return;
     }
 
@@ -651,6 +724,15 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
             breedingDate: pregnancyDraft.breedingDate
           };
 
+    if (
+      animal.pregnancy.status === nextPregnancy.status &&
+      animal.pregnancy.breedingDate === nextPregnancy.breedingDate
+    ) {
+      setPregnancyError("");
+      return;
+    }
+
+    setPregnancyError("");
     setAnimals((current) =>
       current.map((entry) =>
         entry.id === animal.id
@@ -661,38 +743,14 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
           : entry
       )
     );
-    setPregnancyDraft({
-      status: nextPregnancy.status,
-      breedingDate: nextPregnancy.breedingDate ?? ""
-    });
-    setPregnancyError("");
-  };
-
-  const markKiddingCompleted = () => {
-    setAnimals((current) =>
-      current.map((entry) =>
-        entry.id === animal.id
-          ? {
-              ...entry,
-              pregnancy: {
-                status: "open",
-                breedingDate: null
-              }
-            }
-          : entry
-      )
-    );
-    setPregnancyDraft((current) =>
-      current
-        ? {
-            ...current,
-            status: "open",
-            breedingDate: ""
-          }
-        : current
-    );
-    setPregnancyError("");
-  };
+    pulseSaveState(setPregnancySaveState, pregnancySaveTimerRef);
+  }, [
+    animal,
+    messages.profileKiddingFutureDateError,
+    pregnancyDraft,
+    setAnimals,
+    today
+  ]);
 
   const saveProfile = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -928,8 +986,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
           <div className="profile-grid">
             <section className="profile-panel">
               <div className="profile-section-head">
-                <h2>{messages.profileKiddingTab}</h2>
-                <p>{messages.profileKiddingDescription}</p>
+                <div>
+                  <h2>{messages.profileKiddingTab}</h2>
+                  <p>{messages.profileKiddingDescription}</p>
+                </div>
+                <SaveIndicator state={pregnancySaveState} messages={messages} />
               </div>
 
               <div className="profile-kidding-layout">
@@ -957,7 +1018,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                   </div>
                 </div>
 
-                <form className="animal-form profile-form profile-kidding-form" onSubmit={savePregnancy}>
+                <div className="animal-form profile-form profile-kidding-form">
                   <label>
                     {messages.profileKiddingStatusLabel}
                     <select
@@ -1001,11 +1062,8 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
                     ) : (
                       <div />
                     )}
-                    <button className="primary-button" type="submit">
-                      {messages.save}
-                    </button>
                   </div>
-                </form>
+                </div>
               </div>
             </section>
           </div>
@@ -1015,8 +1073,11 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
           <div className="profile-grid">
             <section className="profile-panel">
               <div className="profile-section-head">
-                <h2>{messages.profileVaccinesTab}</h2>
-                <p>{messages.profileVaccinesDescription}</p>
+                <div>
+                  <h2>{messages.profileVaccinesTab}</h2>
+                  <p>{messages.profileVaccinesDescription}</p>
+                </div>
+                <SaveIndicator state={vaccinationSaveState} messages={messages} />
               </div>
 
               <div className="profile-placeholder-grid">
