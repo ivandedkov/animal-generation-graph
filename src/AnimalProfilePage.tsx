@@ -580,7 +580,7 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     return <div className="profile-shell" />;
   }
 
-  if (!animal || !draft || !pregnancyDraft) {
+  if (!animal) {
     return (
       <div className="profile-shell">
         <div className="profile-page">
@@ -615,6 +615,10 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     );
   }
 
+  if (!draft || !pregnancyDraft) {
+    return <div className="profile-shell" />;
+  }
+
   const hasActivePregnancy = pregnancyDraft.status !== "open";
   const expectedKiddingDate = hasActivePregnancy ? calculateExpectedKiddingDate(pregnancyDraft.breedingDate) : "";
   const pregnancyDaysElapsed =
@@ -639,11 +643,6 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
     setDraft((current) => (current ? { ...current, [key]: value } : current));
   };
 
-  const updatePregnancyDraft = <K extends keyof PregnancyDraft>(key: K, value: PregnancyDraft[K]) => {
-    setPregnancyError("");
-    setPregnancyDraft((current) => (current ? { ...current, [key]: value } : current));
-  };
-
   const pulseSaveState = (
     setState: Dispatch<SetStateAction<SaveIndicatorState>>,
     timerRef: { current: number | null }
@@ -660,6 +659,59 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
         timerRef.current = null;
       }, 1600);
     }, 180);
+  };
+
+  const persistPregnancyDraft = (nextDraft: PregnancyDraft) => {
+    if (nextDraft.status !== "open" && !nextDraft.breedingDate) {
+      setPregnancyError("");
+      return;
+    }
+
+    if (nextDraft.status !== "open" && nextDraft.breedingDate > today) {
+      setPregnancyError(messages.profileKiddingFutureDateError);
+      return;
+    }
+
+    const nextPregnancy =
+      nextDraft.status === "open"
+        ? {
+            status: "open" as const,
+            breedingDate: null
+          }
+        : {
+            status: nextDraft.status,
+            breedingDate: nextDraft.breedingDate
+          };
+
+    if (animal.pregnancy.status === nextPregnancy.status && animal.pregnancy.breedingDate === nextPregnancy.breedingDate) {
+      setPregnancyError("");
+      return;
+    }
+
+    setPregnancyError("");
+    setAnimals((current) =>
+      current.map((entry) =>
+        entry.id === animal.id
+          ? {
+              ...entry,
+              pregnancy: nextPregnancy
+            }
+          : entry
+      )
+    );
+    pulseSaveState(setPregnancySaveState, pregnancySaveTimerRef);
+  };
+
+  const updatePregnancyDraft = <K extends keyof PregnancyDraft>(key: K, value: PregnancyDraft[K]) => {
+    setPregnancyDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const nextDraft = { ...current, [key]: value };
+      persistPregnancyDraft(nextDraft);
+      return nextDraft;
+    });
   };
 
   const updateVaccinationDate = (vaccineId: string, value: string) => {
@@ -686,71 +738,15 @@ export function AnimalProfilePage({ animals, setAnimals, animalsLoaded }: Animal
   };
 
   const markKiddingCompleted = () => {
-    setPregnancyDraft((current) =>
-      current
-        ? {
-            ...current,
-            status: "open",
-            breedingDate: ""
-          }
-        : current
-    );
+    const nextDraft = {
+      status: "open" as const,
+      breedingDate: ""
+    };
+
+    setPregnancyDraft(nextDraft);
     setPregnancyError("");
+    persistPregnancyDraft(nextDraft);
   };
-
-  useEffect(() => {
-    if (!animal || !pregnancyDraft) {
-      return;
-    }
-
-    if (pregnancyDraft.status !== "open" && !pregnancyDraft.breedingDate) {
-      setPregnancyError("");
-      return;
-    }
-
-    if (pregnancyDraft.status !== "open" && pregnancyDraft.breedingDate > today) {
-      setPregnancyError(messages.profileKiddingFutureDateError);
-      return;
-    }
-
-    const nextPregnancy =
-      pregnancyDraft.status === "open"
-        ? {
-            status: "open" as const,
-            breedingDate: null
-          }
-        : {
-            status: pregnancyDraft.status,
-            breedingDate: pregnancyDraft.breedingDate
-          };
-
-    if (
-      animal.pregnancy.status === nextPregnancy.status &&
-      animal.pregnancy.breedingDate === nextPregnancy.breedingDate
-    ) {
-      setPregnancyError("");
-      return;
-    }
-
-    setPregnancyError("");
-    setAnimals((current) =>
-      current.map((entry) =>
-        entry.id === animal.id
-          ? {
-              ...entry,
-              pregnancy: nextPregnancy
-            }
-          : entry
-      )
-    );
-    pulseSaveState(setPregnancySaveState, pregnancySaveTimerRef);
-  }, [
-    animal,
-    messages.profileKiddingFutureDateError,
-    pregnancyDraft,
-    setAnimals,
-    today
-  ]);
 
   const saveProfile = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
