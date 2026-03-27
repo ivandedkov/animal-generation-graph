@@ -6,7 +6,7 @@ export type AnimalVaccination = {
   lastDate: string;
 };
 
-export type AnimalPregnancy = {
+type AnimalPregnancy = {
   status: AnimalPregnancyStatus;
   breedingDate: string | null;
 };
@@ -34,14 +34,14 @@ export function createAnimalId() {
   return `animal-${crypto.randomUUID()}`;
 }
 
-export function createAnimalSnapshot(animals: Animal[]): AnimalSnapshot {
+function createAnimalSnapshot(animals: Animal[]): AnimalSnapshot {
   return {
     version: CURRENT_SNAPSHOT_VERSION,
     animals: animals.map((animal) => ({ ...animal }))
   };
 }
 
-export function parseAnimalSnapshot(raw: unknown): Animal[] {
+function parseAnimalSnapshot(raw: unknown): Animal[] {
   const source = extractSnapshotPayload(raw);
   return normalizeAnimals(source);
 }
@@ -102,7 +102,7 @@ function normalizeAnimals(raw: unknown): Animal[] {
     ...animal,
     fatherId: resolveParentId(animal.fatherId, byId, "male"),
     motherId: resolveParentId(animal.motherId, byId, "female"),
-    pregnancy: resolvePregnancy(animal.pregnancy, byId)
+    pregnancy: resolvePregnancy(animal.pregnancy)
   }));
 }
 
@@ -147,9 +147,7 @@ function resolveParentId(parentId: string | null, byId: Map<string, Animal>, exp
   return parentId;
 }
 
-function resolvePregnancy(pregnancy: AnimalPregnancy, byId: Map<string, Animal>) {
-  void byId;
-
+function resolvePregnancy(pregnancy: AnimalPregnancy) {
   if (pregnancy.status === "open" || !pregnancy.breedingDate) {
     return {
       ...pregnancy,

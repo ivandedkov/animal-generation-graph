@@ -1,7 +1,7 @@
 import type { AnimalGender } from "./animal-data";
 import type { Locale } from "./i18n";
 
-export type VaccinationDefinition = {
+type VaccinationDefinition = {
   id: string;
   appliesTo: "all" | "female";
   category: "core" | "risk";

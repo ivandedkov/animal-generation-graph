@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-export const supportedLocales = ["ru", "en"] as const;
+const supportedLocales = ["ru", "en"] as const;
 
 export type Locale = (typeof supportedLocales)[number];
 
